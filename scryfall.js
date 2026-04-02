@@ -53,6 +53,7 @@ const Scryfall = (() => {
     if (promo.includes('halofoil'))        return 'Halo foil';
     if (promo.includes('doublerainbow'))   return 'Double rainbow foil';
     if (promo.includes('fracture'))        return 'Fracture foil';
+    if (promo.includes('chocobotrackfoil')) return 'Chocobo track foil';
     if (frame.includes('etched'))          return 'Etched foil';
     if (finish.includes('etched'))         return 'Etched foil';
     if (finish.includes('glossy'))         return 'Glossy';
@@ -79,7 +80,7 @@ const Scryfall = (() => {
     const hasFoil    = finishes.includes('foil') || finishes.includes('etched');
     const hasSpecial = (card.promo_types ?? []).some(p =>
       ['surgefoil','galaxyfoil','oilslick','textured','stepandcompleat',
-       'gilded','halofoil','doublerainbow','fracture'].includes(p)
+       'gilded','halofoil','doublerainbow','fracture','chocobotrackfoil'].includes(p)
     );
 
     if (hasNonFoil && (hasFoil || hasSpecial)) {

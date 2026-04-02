@@ -95,6 +95,7 @@ const FINISH_ABBREV = {
   'Fracture foil':           '⬡',
   'Etched foil':             '▣',
   'Glossy':                  '●',
+  'Chocobo track foil':      '🐤',
 };
 
 // ---------------------------------------------------------------------------

@@ -1064,6 +1064,7 @@ img { display: block; }
 .finish-icon[data-finish="Double rainbow foil"]     { color: #d48acd; }
 .finish-icon[data-finish="Fracture foil"]           { color: #7cb3c4; }
 .finish-icon[data-finish="Glossy"]                  { color: #8b949e; }
+.finish-icon[data-finish="Chocobo track foil"]      { color: #e8c84a; }
 
 /* Confirm panel */
 .confirm-panel {
