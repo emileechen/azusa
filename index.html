@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Azusa — MTG Full Art Land Tracker</title>
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+
+<!-- ============================================================
+     AUTH SCREEN
+     ============================================================ -->
+<div id="auth-screen">
+  <div class="auth-card">
+    <div class="auth-logo">
+Azusa
+    </div>
+    <p class="auth-tagline">MTG Full Art Land Tracker</p>
+
+    <div class="auth-field">
+      <label for="sheet-id-input">Google Sheet ID</label>
+      <input
+        id="sheet-id-input"
+        class="auth-input"
+        type="text"
+        placeholder="Paste your Sheet ID here…"
+        spellcheck="false"
+        autocomplete="off"
+      />
+    </div>
+
+    <button id="sign-in-btn" class="btn-primary">
+      Sign in with Google
+    </button>
+  </div>
+</div>
+
+<!-- ============================================================
+     APP SCREEN
+     ============================================================ -->
+<div id="app-screen" class="hidden">
+
+  <!-- Header -->
+  <header class="app-header">
+    <div class="app-logo">
+Azusa
+    </div>
+
+    <div class="header-spacer"></div>
+
+    <div class="view-toggle">
+      <button id="btn-grid-view" class="view-toggle-btn active" title="Grid view">⊞ Grid</button>
+      <button id="btn-table-view" class="view-toggle-btn" title="Table view">☰ Table</button>
+    </div>
+
+    <button id="add-card-btn" class="btn-add-card">
+      + Add Card
+    </button>
+
+    <button id="sign-out-btn" class="btn-sign-out">Sign out</button>
+  </header>
+
+  <!-- Filter bar -->
+  <div class="filter-bar">
+
+    <div class="filter-group" id="filter-type-btns">
+      <span class="filter-label">Type</span>
+      <button class="filter-pill active" data-type="all">All</button>
+      <button class="filter-pill" data-type="Plains">Plains</button>
+      <button class="filter-pill" data-type="Island">Island</button>
+      <button class="filter-pill" data-type="Swamp">Swamp</button>
+      <button class="filter-pill" data-type="Mountain">Mountain</button>
+      <button class="filter-pill" data-type="Forest">Forest</button>
+      <button class="filter-pill" data-type="Wastes">Wastes</button>
+    </div>
+
+    <div class="filter-divider"></div>
+
+    <div class="filter-group">
+      <span class="filter-label">Release</span>
+      <select id="filter-release" class="filter-select">
+        <option value="all">All releases</option>
+      </select>
+    </div>
+
+    <div class="filter-group">
+      <span class="filter-label">Finish</span>
+      <select id="filter-finish" class="filter-select">
+        <option value="all">All finishes</option>
+      </select>
+    </div>
+
+    <div class="filter-divider"></div>
+
+    <div class="filter-group" id="filter-status-btns">
+      <button class="filter-pill active" data-status="all">All</button>
+      <button class="filter-pill" data-status="have">Have</button>
+      <button class="filter-pill" data-status="want">Want</button>
+    </div>
+
+    <button id="filter-fav-btn" class="filter-fav-btn">★ Favourites</button>
+
+  </div>
+
+  <!-- Stats strip -->
+  <div class="stats-strip" id="stats-strip">
+    <!-- rendered by app.js -->
+  </div>
+
+  <!-- Main content -->
+  <main class="app-main">
+    <div id="grid-view"></div>
+    <div id="table-view" class="hidden"></div>
+  </main>
+
+</div>
+
+<!-- ============================================================
+     ADD CARD MODAL
+     ============================================================ -->
+<div id="modal-overlay" class="modal-overlay hidden">
+  <div class="modal">
+
+    <div class="modal-header">
+      <h2 id="modal-title">Add Card</h2>
+      <button class="modal-close" id="cancel-modal-btn">✕</button>
+    </div>
+
+    <div class="modal-body">
+
+      <!-- Browse panel -->
+      <div class="browse-panel">
+        <div class="browse-search">
+          <input
+            id="browse-set-input"
+            class="browse-input"
+            type="text"
+            placeholder="Set code (e.g. znr) or leave blank for all…"
+            spellcheck="false"
+            autocomplete="off"
+          />
+          <button id="browse-btn" class="browse-btn">Fetch</button>
+        </div>
+        <div id="sld-drop-filter" class="browse-search sld-filter hidden">
+          <input
+            id="sld-drop-filter-input"
+            class="browse-input"
+            type="text"
+            placeholder="Filter by drop name, artist, collector #…"
+            spellcheck="false"
+            autocomplete="off"
+          />
+        </div>
+        <div id="browse-results" class="browse-results">
+          <div class="browse-empty">
+            Enter a set code and click Fetch, or leave blank to browse all full art basics.
+          </div>
+        </div>
+      </div>
+
+      <!-- Confirm panel -->
+      <div id="confirm-panel" class="confirm-panel hidden">
+
+        <img id="confirm-art" class="confirm-art" src="" alt="Card art"/>
+
+        <div class="confirm-fields">
+          <div class="confirm-field">
+            <label>Set</label>
+            <div class="value" id="confirm-set">—</div>
+          </div>
+          <div class="confirm-field">
+            <label>Collector #</label>
+            <div class="value mono" id="confirm-num">—</div>
+          </div>
+          <div class="confirm-field">
+            <label>Land Type</label>
+            <div class="value" id="confirm-type">—</div>
+          </div>
+          <div class="confirm-field">
+            <label>Finish</label>
+            <div class="value" id="confirm-finish">—</div>
+          </div>
+        </div>
+
+        <div id="confirm-drop-field" class="confirm-field hidden">
+          <label>Drop Name</label>
+          <input
+            id="confirm-drop-name"
+            class="drop-name-input"
+            type="text"
+            placeholder="e.g. Dracula, Full-Text Lands…"
+            spellcheck="false"
+            autocomplete="off"
+          />
+        </div>
+
+        <div class="confirm-field">
+          <label>Status</label>
+          <div class="toggle-group">
+            <button id="status-toggle-have" class="toggle-btn status-have active">Have</button>
+            <button id="status-toggle-want" class="toggle-btn status-want">Want</button>
+          </div>
+        </div>
+
+        <button id="fav-toggle" class="fav-toggle-btn">☆ Favourite</button>
+
+      </div>
+
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-cancel" id="cancel-modal-btn-2" onclick="closeModal()">Cancel</button>
+      <button class="btn-save" id="save-card-btn">Save</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- ============================================================
+     EDIT MODAL
+     ============================================================ -->
+<div id="edit-modal-overlay" class="modal-overlay hidden">
+  <div class="modal" style="width:380px">
+
+    <div class="modal-header">
+      <h2 id="edit-modal-title">Edit Card</h2>
+      <button class="modal-close" id="cancel-edit-btn-x" onclick="closeEditModal()">✕</button>
+    </div>
+
+    <input type="hidden" id="edit-card-id"/>
+
+    <div class="modal-body" style="flex-direction:column; padding:16px; gap:12px; overflow-y:auto;">
+
+      <img id="edit-art" class="confirm-art" src="" alt="Card art" style="max-height:220px; object-fit:contain;"/>
+
+      <div class="confirm-fields">
+        <div class="confirm-field">
+          <label>Set</label>
+          <div class="value" id="edit-set">—</div>
+        </div>
+        <div class="confirm-field">
+          <label>Collector #</label>
+          <div class="value mono" id="edit-num">—</div>
+        </div>
+        <div class="confirm-field">
+          <label>Land Type</label>
+          <div class="value" id="edit-type">—</div>
+        </div>
+        <div class="confirm-field">
+          <label>Finish</label>
+          <div class="value" id="edit-finish">—</div>
+        </div>
+      </div>
+
+      <div id="edit-drop-field" class="confirm-field hidden">
+        <label>Drop Name</label>
+        <input
+          id="edit-drop-name"
+          class="drop-name-input"
+          type="text"
+          placeholder="e.g. Dracula, Full-Text Lands…"
+          spellcheck="false"
+          autocomplete="off"
+        />
+      </div>
+
+      <div class="confirm-field">
+        <label>Status</label>
+        <div class="toggle-group">
+          <button id="edit-status-have" class="toggle-btn status-have active">Have</button>
+          <button id="edit-status-want" class="toggle-btn status-want">Want</button>
+        </div>
+      </div>
+
+      <button id="edit-fav-toggle" class="fav-toggle-btn">☆ Favourite</button>
+
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn-cancel" id="cancel-edit-btn" onclick="closeEditModal()">Cancel</button>
+      <button class="btn-save" id="save-edit-btn">Save</button>
+    </div>
+
+  </div>
+</div>
+
+<!-- ============================================================
+     LOADING OVERLAY
+     ============================================================ -->
+<div id="loading-overlay" class="hidden">
+  <div class="loading-spinner"></div>
+</div>
+
+<!-- ============================================================
+     ERROR TOAST
+     ============================================================ -->
+<div id="error-toast" class="hidden"></div>
+
+<!-- ============================================================
+     SCRIPTS
+     ============================================================ -->
+<script src="sld-drops.js"></script>
+<script src="scryfall.js"></script>
+<script src="sheets.js"></script>
+<script src="app.js"></script>
+
+<!-- Google Identity Services — calls initGoogleAuth() on load -->
+<script src="https://accounts.google.com/gsi/client" async defer onload="initGoogleAuth()"></script>
+
+</body>
+</html>
