@@ -473,9 +473,10 @@ img { display: block; }
   transition: background 0.1s, border-color 0.1s;
 }
 .card-action-btn.scryfall-btn      { text-decoration: none; }
-.card-action-btn.scryfall-btn:hover { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
+.card-action-btn.scryfall-btn:hover { background: var(--accent-dim); border-color: var(--accent); }
+.scryfall-icon { width: 16px; height: 16px; border-radius: 2px; }
+.card-action-btn.status-btn:hover { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
 .card-action-btn.delete-btn:hover { background: var(--want-bg); border-color: var(--want); color: var(--want); }
-.card-action-btn.edit-btn:hover   { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
 
 /* Foil shimmer */
 .foil-shimmer {
