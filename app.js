@@ -352,6 +352,7 @@ function renderStats() {
 
   const totalValue = State.cards.reduce((sum, c) => sum + (parseFloat(c.price) || 0), 0);
   const haveValue  = State.cards.filter(c => c.status === 'have').reduce((sum, c) => sum + (parseFloat(c.price) || 0), 0);
+  const wantValue  = State.cards.filter(c => c.status === 'want').reduce((sum, c) => sum + (parseFloat(c.price) || 0), 0);
 
   $('stats-strip').innerHTML =
     `<span>${total} cards</span>` +
@@ -360,7 +361,9 @@ function renderStats() {
     `<span class="stat-fav">★ ${fav} favourited</span>` +
     (totalValue > 0
       ? `<span class="stat-divider">|</span>` +
-        `<span class="stat-value" title="Have: $${haveValue.toFixed(2)}">≈ $${totalValue.toFixed(2)}</span>`
+        `<span class="stat-value">Total ≈ $${totalValue.toFixed(2)}</span>` +
+        `<span class="stat-value stat-have">Owned ≈ $${haveValue.toFixed(2)}</span>` +
+        `<span class="stat-value stat-want">Need ≈ $${wantValue.toFixed(2)}</span>`
       : '') +
     `<span class="stat-divider">|</span>` +
     LAND_TYPES.filter(t => typeCounts[t] > 0).map(t =>
@@ -418,7 +421,16 @@ function renderGrid(cards) {
         <div class="cycle-header">
           <span class="cycle-label">
             <span class="finish-badge" data-finish="${finish}">${finishAbbrev(finish)}\u2005${finish}</span>
-            <span class="cycle-tag">${allCards.length} cards</span>
+            <span class="cycle-tag">${allCards.length} cards</span>${(() => {
+              const t = allCards.reduce((s, c) => s + (parseFloat(c.price) || 0), 0);
+              if (t === 0) return '';
+              const o = allCards.filter(c => c.status === 'have').reduce((s, c) => s + (parseFloat(c.price) || 0), 0);
+              const n = allCards.filter(c => c.status === 'want').reduce((s, c) => s + (parseFloat(c.price) || 0), 0);
+              return `<span class="cycle-prices">` +
+                `<span class="cycle-price">$${t.toFixed(2)}</span>` +
+                `<span class="cycle-price have">owned $${o.toFixed(2)}</span>` +
+                `<span class="cycle-price want">need $${n.toFixed(2)}</span></span>`;
+            })()}
           </span>
           <button class="fav-btn cycle-fav-btn ${state}"
                   title="Favourite cycle"
@@ -482,12 +494,12 @@ function makeCardTile(card) {
         <span class="card-set-code" title="${card.set_name}">${card.set_code.toUpperCase()}</span>
         <span class="card-num">#${card.collector_num}</span>
         <span class="card-icons">
+          ${card.price ? `<span class="card-price">$${card.price}</span>` : ''}
           <span class="finish-icon" data-finish="${card.finish}" title="${card.finish}">${finishIcon}</span>
           ${landIcon(card.land_type)}
         </span>
       </div>
     </div>
-    ${card.price ? `<div class="card-price">$${card.price}</div>` : ''}
     <button class="fav-btn card-fav-btn ${card.favourite ? 'all' : 'none'}"
             title="Favourite" data-id="${card.id}">
       ${card.favourite ? '★' : '☆'}
@@ -736,14 +748,15 @@ async function browseSet() {
   $('sld-drop-filter-input').value = '';
 
   try {
+    const fullArtOnly = $('browse-fullart').checked;
     State.browseCards = await Scryfall.searchFullArtLands(setCode, (loaded, total) => {
       const loadingEl = resultsEl.querySelector('.browse-loading');
       if (loadingEl) loadingEl.textContent =
         total ? `Loading… ${loaded} / ${total}` : `Loading… ${loaded}`;
-    });
+    }, { fullArtOnly });
 
     if (State.browseCards.length === 0) {
-      resultsEl.innerHTML = '<div class="browse-empty">No full art basics found.</div>';
+      resultsEl.innerHTML = '<div class="browse-empty">No basic lands found.</div>';
       return;
     }
 
