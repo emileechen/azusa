@@ -14,6 +14,7 @@ const SLD_DROPS = [
   { name: 'Pixel Lands 02.jpg',                                       start: 1468, end: 1472  },
   { name: 'SpongeBob SquarePants: Lands Under the Sea',               start: 1939, end: 1943  },
   { name: 'Dungeons & Dragons\u00AE: Lands of the Forgotten Realms',  start: 2509, end: 2513  },
+  { name: 'Fallout: Points of Interest',                              start:  795, end:  795  },
 
   // { name: 'Seb McKinnon: Swamp',            start:  119, end:  119  },
   // { name: 'Ultimate Edition',               start:  359, end:  363  },
