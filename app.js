@@ -56,13 +56,6 @@ const LAND_COLORS = {
   Other:    '#8b949e',
 };
 
-const FOIL_FINISHES = [
-  'Regular foil','Surge foil','Galaxy foil','Oil slick foil',
-  'Textured foil','Step-and-compleat foil','Gilded foil',
-  'Halo foil','Double rainbow foil','Fracture foil',
-  'Etched foil','Glossy',
-];
-
 // Scryfall mana symbol images
 const LAND_MANA = {
   Plains:   'W',
@@ -81,22 +74,11 @@ function landIcon(landType) {
   return `<span class="land-icon-text" style="color:${LAND_COLORS[landType]}">${landType[0]}</span>`;
 }
 
-const FINISH_ABBREV = {
-  'Non-foil':                '',
-  'Regular foil':            '◆',
-  'Surge foil':              '⚡',
-  'Galaxy foil':             '✦',
-  'Oil slick foil':          '◈',
-  'Textured foil':           '▧',
-  'Step-and-compleat foil':  'Φ',
-  'Gilded foil':             '♛',
-  'Halo foil':               '◯',
-  'Double rainbow foil':     '⟐',
-  'Fracture foil':           '⬡',
-  'Etched foil':             '▣',
-  'Glossy':                  '●',
-  'Chocobo track foil':      '🐤',
-};
+function finishAbbrev(finish) {
+  if (finish === 'nonfoil') return '';
+  if (finish === 'foil') return '◆';
+  return '★';
+}
 
 // ---------------------------------------------------------------------------
 // AUTH — Google Identity Services
@@ -428,14 +410,14 @@ function renderGrid(cards) {
 // ---------------------------------------------------------------------------
 function makeCardTile(card) {
   const tile = el('div', 'card-tile');
-  const isFoil = card.finish !== 'Non-foil';
+  const isFoil = card.finish !== 'nonfoil';
   if (isFoil) tile.setAttribute('data-foil', 'true');
   tile.setAttribute('data-finish', card.finish);
   tile.setAttribute('data-land-type', card.land_type);
   if (card.status === 'want') tile.classList.add('want');
 
   const imgUrl = Scryfall.imageUrl(card.scryfall_id);
-  const finishIcon = FINISH_ABBREV[card.finish] ?? '';
+  const finishIcon = finishAbbrev(card.finish);
 
   tile.innerHTML = `
     <div class="card-art-wrap">
@@ -519,7 +501,7 @@ function renderTable(cards) {
     // Card rows
     for (const card of release.cards) {
       const row = el('tr', 'table-card-row');
-      const finishIcon = FINISH_ABBREV[card.finish] ?? '';
+      const finishIcon = finishAbbrev(card.finish);
       row.innerHTML = `
         <td class="table-art-cell">
           <img src="${Scryfall.imageUrl(card.scryfall_id, 'small')}"
@@ -741,7 +723,7 @@ function renderSldBrowseGrid(cards) {
       const finish = Scryfall.deriveFinish(card);
       const landType = Scryfall.deriveLandType(card);
       const imgUrl = Scryfall.imageUrl(card.id);
-      const isFoil = finish !== 'Non-foil';
+      const isFoil = finish !== 'nonfoil';
 
       const tile = el('div', 'browse-tile');
       if (isFoil) tile.setAttribute('data-foil', 'true');
@@ -749,7 +731,7 @@ function renderSldBrowseGrid(cards) {
 
       const dupe = Sheets.findDuplicate(State.cards, card.set, card.collector_number, finish);
 
-      const finishIcon = FINISH_ABBREV[finish] ?? '';
+      const finishIcon = finishAbbrev(finish);
 
       tile.innerHTML = `
         <div class="browse-art-wrap">
@@ -857,7 +839,7 @@ function makeBrowseTile(card) {
   const finish = Scryfall.deriveFinish(card);
   const landType = Scryfall.deriveLandType(card);
   const imgUrl = Scryfall.imageUrl(card.id);
-  const isFoil = finish !== 'Non-foil';
+  const isFoil = finish !== 'nonfoil';
 
   const tile = el('div', 'browse-tile');
   if (isFoil) tile.setAttribute('data-foil', 'true');
@@ -866,7 +848,7 @@ function makeBrowseTile(card) {
   // Check if already in collection
   const dupe = Sheets.findDuplicate(State.cards, card.set, card.collector_number, finish);
 
-  const finishIcon = FINISH_ABBREV[finish] ?? '';
+  const finishIcon = finishAbbrev(finish);
 
   tile.innerHTML = `
     <div class="browse-art-wrap">

@@ -34,8 +34,9 @@ const Scryfall = (() => {
   }
 
   // ---------------------------------------------------------------------------
-  // Derive a human-readable finish label from a Scryfall card object.
-  // Priority: promo_types → frame_effects → finishes
+  // Derive a finish key from a Scryfall card object.
+  // Returns a raw Scryfall key: 'nonfoil', 'foil', 'etched', 'glossy',
+  // or a promo_type like 'surgefoil', 'galaxyfoil', etc.
   // ---------------------------------------------------------------------------
   function deriveFinish(card) {
     if (card._forcedFinish) return card._forcedFinish;
@@ -44,48 +45,35 @@ const Scryfall = (() => {
     const frame  = card.frame_effects ?? [];
     const finish = card.finishes      ?? [];
 
-    if (promo.includes('surgefoil'))       return 'Surge foil';
-    if (promo.includes('galaxyfoil'))      return 'Galaxy foil';
-    if (promo.includes('oilslick'))        return 'Oil slick foil';
-    if (promo.includes('textured'))        return 'Textured foil';
-    if (promo.includes('stepandcompleat')) return 'Step-and-compleat foil';
-    if (promo.includes('gilded'))          return 'Gilded foil';
-    if (promo.includes('halofoil'))        return 'Halo foil';
-    if (promo.includes('doublerainbow'))   return 'Double rainbow foil';
-    if (promo.includes('fracture'))        return 'Fracture foil';
-    if (promo.includes('chocobotrackfoil')) return 'Chocobo track foil';
-    if (frame.includes('etched'))          return 'Etched foil';
-    if (finish.includes('etched'))         return 'Etched foil';
-    if (finish.includes('glossy'))         return 'Glossy';
-    if (finish.includes('foil'))           return 'Regular foil';
-    return 'Non-foil';
+    if (frame.includes('etched'))  return 'etched';
+    if (finish.includes('etched')) return 'etched';
+    if (finish.includes('glossy')) return 'glossy';
+    if (promo.length > 0)         return promo[0];
+    if (finish.includes('foil'))   return 'foil';
+    return 'nonfoil';
   }
 
   // ---------------------------------------------------------------------------
   // Derive whether a card has any foil treatment (for CSS shimmer)
   // ---------------------------------------------------------------------------
   function isFoil(card) {
-    return deriveFinish(card) !== 'Non-foil';
+    return deriveFinish(card) !== 'nonfoil';
   }
 
   // ---------------------------------------------------------------------------
   // Expand a card into separate entries per finish.
   // A card with finishes: ["nonfoil","foil"] becomes two entries — one forced
-  // to Non-foil, one to its derived foil type. Cards with a single finish or
+  // to nonfoil, one to its derived foil type. Cards with a single finish or
   // a special promo foil type are returned as-is.
   // ---------------------------------------------------------------------------
   function expandFinishes(card) {
     const finishes = card.finishes ?? [];
     const hasNonFoil = finishes.includes('nonfoil');
     const hasFoil    = finishes.includes('foil') || finishes.includes('etched');
-    const hasSpecial = (card.promo_types ?? []).some(p =>
-      ['surgefoil','galaxyfoil','oilslick','textured','stepandcompleat',
-       'gilded','halofoil','doublerainbow','fracture','chocobotrackfoil'].includes(p)
-    );
+    const hasSpecial = (card.promo_types ?? []).length > 0;
 
     if (hasNonFoil && (hasFoil || hasSpecial)) {
-      // Split into two entries
-      const nonFoilCopy = { ...card, finishes: ['nonfoil'], _forcedFinish: 'Non-foil' };
+      const nonFoilCopy = { ...card, finishes: ['nonfoil'], _forcedFinish: 'nonfoil' };
       const foilCopy    = { ...card, finishes: finishes.filter(f => f !== 'nonfoil') };
       return [nonFoilCopy, foilCopy];
     }

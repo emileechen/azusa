@@ -419,13 +419,9 @@ img { display: block; }
   opacity: 0.7;
 }
 /* Finish color coding */
-.card-tile[data-finish="Non-foil"]       { border-color: var(--border); }
-.card-tile[data-finish="Regular foil"]   { border-color: rgba(184,151,106,0.35); }
-.card-tile[data-finish="Surge foil"]     { border-color: rgba(212,138,124,0.45); }
-.card-tile[data-finish="Galaxy foil"]    { border-color: rgba(120,100,180,0.45); }
-.card-tile[data-finish="Oil slick foil"] { border-color: rgba(106,170,94,0.35); }
-.card-tile[data-finish="Etched foil"]    { border-color: rgba(166,139,199,0.45); }
-.card-tile[data-finish="Textured foil"]  { border-color: rgba(212,168,92,0.45); }
+.card-tile[data-finish="nonfoil"]  { border-color: var(--border); }
+.card-tile[data-finish="foil"]     { border-color: rgba(184,151,106,0.35); }
+.card-tile:not([data-finish="nonfoil"]):not([data-finish="foil"]) { border-color: rgba(166,139,199,0.45); }
 
 .card-tile:hover {
   transform: translateY(-2px);
@@ -496,21 +492,11 @@ img { display: block; }
 }
 .card-tile:hover .foil-shimmer { opacity: 1; }
 
-/* Per-finish shimmer variants */
-.card-tile[data-finish="Surge foil"]:hover .foil-shimmer {
+/* Special foil shimmer variant */
+.card-tile:not([data-finish="nonfoil"]):not([data-finish="foil"]):hover .foil-shimmer {
   background: linear-gradient(110deg,
     transparent 15%, rgba(255,200,80,0.07) 35%,
-    rgba(255,100,200,0.10) 50%, rgba(80,200,255,0.08) 65%, transparent 85%);
-}
-.card-tile[data-finish="Galaxy foil"]:hover .foil-shimmer {
-  background: linear-gradient(140deg,
-    transparent 10%, rgba(40,0,120,0.08) 35%,
-    rgba(200,180,255,0.12) 55%, rgba(0,80,200,0.07) 75%, transparent 90%);
-}
-.card-tile[data-finish="Oil slick foil"]:hover .foil-shimmer {
-  background: linear-gradient(100deg,
-    transparent 10%, rgba(0,200,100,0.08) 35%,
-    rgba(200,50,200,0.10) 55%, rgba(255,150,0,0.07) 75%, transparent 90%);
+    rgba(200,180,255,0.10) 50%, rgba(80,200,255,0.08) 65%, transparent 85%);
 }
 
 /* Card info strip */
@@ -604,40 +590,20 @@ img { display: block; }
   border: 1px solid rgba(166,139,199,0.25);
   white-space: nowrap;
 }
-.finish-badge[data-finish="Non-foil"] {
+.finish-badge[data-finish="nonfoil"] {
   background: rgba(139,148,158,0.1);
   color: var(--text-muted);
   border-color: var(--border);
 }
-.finish-badge[data-finish="Regular foil"] {
+.finish-badge[data-finish="foil"] {
   background: rgba(184,151,106,0.12);
   color: #b8976a;
   border-color: rgba(184,151,106,0.3);
 }
-.finish-badge[data-finish="Surge foil"] {
-  background: rgba(212,138,124,0.12);
-  color: #d48a7c;
-  border-color: rgba(212,138,124,0.3);
-}
-.finish-badge[data-finish="Galaxy foil"] {
-  background: rgba(120,100,180,0.12);
-  color: #8878b4;
-  border-color: rgba(120,100,180,0.3);
-}
-.finish-badge[data-finish="Oil slick foil"] {
-  background: rgba(106,170,94,0.12);
-  color: #6aaa5e;
-  border-color: rgba(106,170,94,0.3);
-}
-.finish-badge[data-finish="Etched foil"] {
+.finish-badge:not([data-finish="nonfoil"]):not([data-finish="foil"]) {
   background: rgba(166,139,199,0.12);
   color: #a68bc7;
   border-color: rgba(166,139,199,0.3);
-}
-.finish-badge[data-finish="Textured foil"] {
-  background: rgba(212,168,92,0.12);
-  color: #d4a85c;
-  border-color: rgba(212,168,92,0.3);
 }
 
 .finish-badge-sm {
@@ -648,13 +614,9 @@ img { display: block; }
   color: var(--foil);
   white-space: nowrap;
 }
-.finish-badge-sm[data-finish="Non-foil"]       { background: rgba(139,148,158,0.1); color: var(--text-muted); }
-.finish-badge-sm[data-finish="Regular foil"]   { background: rgba(184,151,106,0.12); color: #b8976a; }
-.finish-badge-sm[data-finish="Surge foil"]     { background: rgba(212,138,124,0.12); color: #d48a7c; }
-.finish-badge-sm[data-finish="Galaxy foil"]    { background: rgba(120,100,180,0.12); color: #8878b4; }
-.finish-badge-sm[data-finish="Oil slick foil"] { background: rgba(106,170,94,0.12); color: #6aaa5e; }
-.finish-badge-sm[data-finish="Etched foil"]    { background: rgba(166,139,199,0.12); color: #a68bc7; }
-.finish-badge-sm[data-finish="Textured foil"]  { background: rgba(212,168,92,0.12); color: #d4a85c; }
+.finish-badge-sm[data-finish="nonfoil"]  { background: rgba(139,148,158,0.1); color: var(--text-muted); }
+.finish-badge-sm[data-finish="foil"]     { background: rgba(184,151,106,0.12); color: #b8976a; }
+.finish-badge-sm:not([data-finish="nonfoil"]):not([data-finish="foil"]) { background: rgba(166,139,199,0.12); color: #a68bc7; }
 
 /* ============================================================
    TABLE VIEW
@@ -960,13 +922,9 @@ img { display: block; }
   background: var(--surface-2);
 }
 /* Finish color coding */
-.browse-tile[data-finish="Non-foil"]     { border-color: var(--border); }
-.browse-tile[data-finish="Regular foil"] { border-color: rgba(184,151,106,0.4); }
-.browse-tile[data-finish="Surge foil"]   { border-color: rgba(212,138,124,0.5); }
-.browse-tile[data-finish="Galaxy foil"]  { border-color: rgba(120,100,180,0.5); }
-.browse-tile[data-finish="Oil slick foil"] { border-color: rgba(106,170,94,0.4); }
-.browse-tile[data-finish="Etched foil"]  { border-color: rgba(166,139,199,0.5); }
-.browse-tile[data-finish="Textured foil"] { border-color: rgba(212,168,92,0.5); }
+.browse-tile[data-finish="nonfoil"]  { border-color: var(--border); }
+.browse-tile[data-finish="foil"]     { border-color: rgba(184,151,106,0.4); }
+.browse-tile:not([data-finish="nonfoil"]):not([data-finish="foil"]) { border-color: rgba(166,139,199,0.5); }
 
 .browse-tile:hover { border-color: var(--border-2); }
 .browse-tile.selected { border-color: var(--accent); }
@@ -1057,19 +1015,8 @@ img { display: block; }
   line-height: 1;
   cursor: default;
 }
-.finish-icon[data-finish="Regular foil"]            { color: #b8976a; }
-.finish-icon[data-finish="Surge foil"]              { color: #d48a7c; }
-.finish-icon[data-finish="Galaxy foil"]             { color: #8878b4; }
-.finish-icon[data-finish="Oil slick foil"]          { color: #6aaa5e; }
-.finish-icon[data-finish="Etched foil"]             { color: #a68bc7; }
-.finish-icon[data-finish="Textured foil"]           { color: #d4a85c; }
-.finish-icon[data-finish="Step-and-compleat foil"]  { color: #8bbbd4; }
-.finish-icon[data-finish="Gilded foil"]             { color: #d4a85c; }
-.finish-icon[data-finish="Halo foil"]               { color: #c4d0dc; }
-.finish-icon[data-finish="Double rainbow foil"]     { color: #d48acd; }
-.finish-icon[data-finish="Fracture foil"]           { color: #7cb3c4; }
-.finish-icon[data-finish="Glossy"]                  { color: #8b949e; }
-.finish-icon[data-finish="Chocobo track foil"]      { color: #e8c84a; }
+.finish-icon[data-finish="foil"] { color: #b8976a; }
+.finish-icon:not([data-finish="foil"]) { color: #a68bc7; }
 
 /* Confirm panel */
 .confirm-panel {
