@@ -231,6 +231,8 @@ img { display: block; }
   white-space: nowrap;
 }
 .btn-refresh-prices:hover { color: var(--have); border-color: var(--have); }
+.refresh-short { display: none; }
+.refresh-full { display: inline; }
 .btn-refresh-prices:disabled { opacity: 0.6; cursor: wait; }
 
 .btn-add-card {
@@ -246,6 +248,8 @@ img { display: block; }
   transition: opacity 0.15s;
 }
 .btn-add-card:hover { opacity: 0.85; }
+.add-card-short { display: none; }
+.add-card-full { display: inline; }
 
 .btn-sign-out {
   color: var(--text-muted);
@@ -298,11 +302,17 @@ img { display: block; }
   color: var(--accent);
 }
 
-.filter-pill[data-type="Plains"].active   { background: rgba(212,185,120,0.15); border-color: #c9ac6a; color: #c9ac6a; }
-.filter-pill[data-type="Island"].active   { background: rgba(100,160,180,0.15); border-color: #6aa0b4; color: #6aa0b4; }
-.filter-pill[data-type="Mountain"].active { background: rgba(200,110,90,0.15);  border-color: #c8705a; color: #c8705a; }
-.filter-pill[data-type="Forest"].active   { background: rgba(106,170,94,0.15);  border-color: #6aaa5e; color: #6aaa5e; }
-.filter-pill[data-type="Swamp"].active    { background: rgba(140,120,170,0.15); border-color: #8c78aa; color: #8c78aa; }
+/* Mana icon filter pills */
+.filter-mana { padding: 4px; line-height: 0; }
+.filter-mana-icon { width: 18px; height: 18px; opacity: 0.5; transition: opacity 0.15s; }
+.filter-mana:hover .filter-mana-icon { opacity: 0.8; }
+.filter-mana.active .filter-mana-icon { opacity: 1; }
+
+.filter-pill[data-type="Plains"].active   { background: rgba(212,185,120,0.15); border-color: #c9ac6a; }
+.filter-pill[data-type="Island"].active   { background: rgba(100,160,180,0.15); border-color: #6aa0b4; }
+.filter-pill[data-type="Mountain"].active { background: rgba(200,110,90,0.15);  border-color: #c8705a; }
+.filter-pill[data-type="Forest"].active   { background: rgba(106,170,94,0.15);  border-color: #6aaa5e; }
+.filter-pill[data-type="Swamp"].active    { background: rgba(140,120,170,0.15); border-color: #8c78aa; }
 
 .filter-select {
   background: var(--bg);
@@ -1276,6 +1286,25 @@ img { display: block; }
   .modal-body { flex-direction: column; }
   .confirm-panel { width: 100%; border-right: none; border-top: 1px solid var(--border); }
   .browse-panel { border-right: none; }
-  .filter-bar { gap: 8px; }
   .card-grid { grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); }
+
+  /* Header: compact buttons */
+  .app-header { gap: 8px; padding: 0 12px; }
+  .add-card-full { display: none; }
+  .add-card-short { display: inline; font-size: 1.1rem; font-weight: 700; }
+  .btn-add-card { padding: 6px 10px; }
+  .refresh-full { display: none; }
+  .refresh-short { display: inline; font-size: 0.9rem; font-weight: 600; }
+  .btn-refresh-prices { padding: 6px 10px; }
+  .view-toggle-btn { padding: 5px 8px; font-size: 0.75rem; }
+
+  /* Filter bar: scroll type pills, hide dividers */
+  .filter-bar { gap: 6px; padding: 8px 12px; flex-wrap: wrap; }
+  .filter-group { flex-shrink: 0; }
+  #filter-type-btns { overflow-x: auto; -webkit-overflow-scrolling: touch; flex-wrap: nowrap; max-width: 100%; }
+  .filter-divider { display: none; }
+  .filter-label { display: none; }
+
+  /* Stats strip: tighter */
+  .stats-strip { gap: 8px; padding: 6px 12px; font-size: 0.72rem; }
 }

@@ -396,10 +396,6 @@ function renderStats() {
   const have    = State.cards.filter(c => c.status === 'have').length;
   const want    = State.cards.filter(c => c.status === 'want').length;
   const fav     = State.cards.filter(c => c.favourite).length;
-  const typeCounts = {};
-  for (const t of LAND_TYPES) {
-    typeCounts[t] = State.cards.filter(c => c.land_type === t).length;
-  }
 
   const totalValue = State.cards.reduce((sum, c) => sum + (parseFloat(c.price) || 0), 0);
   const haveValue  = State.cards.filter(c => c.status === 'have').reduce((sum, c) => sum + (parseFloat(c.price) || 0), 0);
@@ -415,11 +411,7 @@ function renderStats() {
         `<span class="stat-value">Total ≈ $${totalValue.toFixed(2)}</span>` +
         `<span class="stat-value stat-have">Owned ≈ $${haveValue.toFixed(2)}</span>` +
         `<span class="stat-value stat-want">Need ≈ $${wantValue.toFixed(2)}</span>`
-      : '') +
-    `<span class="stat-divider">|</span>` +
-    LAND_TYPES.filter(t => typeCounts[t] > 0).map(t =>
-      `<span class="stat-type" style="color:${LAND_COLORS[t]}">${t} ${typeCounts[t]}</span>`
-    ).join('');
+      : '');
 }
 
 // ---------------------------------------------------------------------------
