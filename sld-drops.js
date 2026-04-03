@@ -2,43 +2,71 @@
  * sld-drops.js — Azusa
  * Secret Lair drop name registry.
  * Maps collector number ranges to drop names for SLD basic lands.
- * Add new entries as new Secret Lair drops are released.
+ *
+ * ── How to regenerate ──
+ *
+ * 1. Fetch all SLD basic land collector numbers from the Scryfall API:
+ *    https://api.scryfall.com/cards/search?q=set:sld unique:prints (type:land type:basic)&order=collector_number
+ *    Paginate all pages. Strip ★ suffixes from collector numbers to get unique ints.
+ *
+ * 2. Fetch the Scryfall SLD set page HTML: https://scryfall.com/sets/sld
+ *    (requires a browser-like User-Agent header).
+ *    Split on <h3 class="card-grid-header"> to get sections. Each section has:
+ *      - Drop name in the header text (strip HTML tags + "• N cards" suffix)
+ *      - Card links as /card/sld/{collector_number}
+ *
+ * 3. Cross-reference: for each section, intersect its collector numbers with
+ *    the set from step 1. Split non-contiguous matches into separate entries
+ *    (e.g. Artist Series: Seb McKinnon has cards at #119 and #539).
+ *
+ * 4. Format as { name, start, end } entries sorted by start number.
+ *    Use \u00AE for ® and \u00E2 for â to keep the file ASCII-safe.
  */
 
 const SLD_DROPS = [
-  { name: 'The Tokyo Lands',                                          start:   46, end:   50  },
-  { name: 'The Godzilla Lands',                                       start:   63, end:   67  },
-  { name: 'Brutal Basic Lands',                                       start:  239, end:  243  },
-  { name: 'PIXELSNOWLANDS.JPG',                                       start:  325, end:  329  },
-  { name: 'Special Guest: Kozyndan: The Lands',                       start: 1130, end: 1134  },
-  { name: 'Pixel Lands 02.jpg',                                       start: 1468, end: 1472  },
-  { name: 'SpongeBob SquarePants: Lands Under the Sea',               start: 1939, end: 1943  },
-  { name: 'Dungeons & Dragons\u00AE: Lands of the Forgotten Realms',  start: 2509, end: 2513  },
-  { name: 'Fallout: Points of Interest',                              start:  795, end:  795  },
-
-  // { name: 'Seb McKinnon: Swamp',            start:  119, end:  119  },
-  // { name: 'Ultimate Edition',               start:  359, end:  363  },
-  // { name: "Jeanne d'Angelo Lands",          start:  384, end:  395  },
-  // { name: 'The Lands',                      start:  415, end:  419  },
-  // { name: 'Showcase: Zendikar Revisited',   start:  448, end:  452  },
-  // { name: 'Sidharth Chaturvedi: Island',    start:  466, end:  466  },
-  // { name: 'Magali Villeneuve: Forest',      start:  476, end:  476  },
-  // { name: 'Seb McKinnon: Swamp II',         start:  539, end:  539  },
-  // { name: 'MSCHF x Daniel Warren Johnson',  start:  670, end:  674  },
-  // { name: 'Magali Villeneuve: Forest II',   start:  690, end:  690  },
-  // { name: 'Wastes',                         start:  704, end:  706  },
-  // { name: 'AKQA: Wastes',                   start:  795, end:  795  },
-  // { name: 'Arcane Lands',                   start:  888, end:  892  },
-  // { name: 'Post Malone Lands',              start: 1088, end: 1092  },
-  // { name: 'Gary Baseman Lands',             start: 1382, end: 1386  },
-  // { name: 'JungShan Lands',                 start: 1399, end: 1403  },
-  // { name: 'Winter + Snow Lands',            start: 1468, end: 1482  },
-  // { name: 'Alayna Danner Lands',            start: 1513, end: 1515  },
-  // { name: 'Concert Lands',                  start: 1647, end: 1656  },
-  // { name: 'Psychedelic Lands',              start: 1939, end: 1954  },
-  // { name: 'National Park Lands',            start: 2076, end: 2080  },
-  // { name: 'Kelogsloops Islands',            start: 2144, end: 2147  },
-  // { name: 'Arthur Yuan Lands',              start: 2509, end: 2513  },
+  { name: 'Eldraine Wonderland',                                       start:    1, end:    5  },
+  { name: 'The Tokyo Lands',                                           start:   46, end:   50  },
+  { name: 'The Godzilla Lands',                                        start:   63, end:   67  },
+  { name: 'Happy Little Gathering',                                    start:  100, end:  109  },
+  { name: 'Artist Series: Seb McKinnon',                               start:  119, end:  119  },
+  { name: 'Brutal Basic Lands',                                        start:  239, end:  243  },
+  { name: 'Voracious Reader',                                          start:  254, end:  258  },
+  { name: 'PIXELSNOWLANDS.JPG',                                        start:  325, end:  329  },
+  { name: 'The Dracula Lands',                                         start:  359, end:  363  },
+  { name: 'Zodiac Lands',                                              start:  384, end:  395  },
+  { name: 'Shades Not Included',                                       start:  415, end:  419  },
+  { name: 'Fortnite: Locations',                                       start:  448, end:  452  },
+  { name: 'Artist Series: Sidharth Chaturvedi',                        start:  466, end:  466  },
+  { name: 'Artist Series: Magali Villeneuve',                          start:  476, end:  476  },
+  { name: 'Arcane: Lands',                                             start:  484, end:  488  },
+  { name: 'Artist Series: Seb McKinnon',                               start:  539, end:  539  },
+  { name: 'Foil Jumpstart Lands',                                      start:  540, end:  579  },
+  { name: 'MSCHF',                                                     start:  670, end:  670  },
+  { name: 'Heads I Win, Tails You Lose',                               start:  673, end:  674  },
+  { name: 'Artist Series: Magali Villeneuve',                          start:  690, end:  690  },
+  { name: 'Warhammer 40,000: Orks',                                    start:  704, end:  704  },
+  { name: 'Warhammer Age of Sigmar',                                   start:  705, end:  705  },
+  { name: 'Blood Bowl',                                                start:  706, end:  706  },
+  { name: 'Fallout: Points of Interest',                               start:  795, end:  795  },
+  { name: 'Deceptive Districts',                                       start:  888, end:  892  },
+  { name: 'Transformers: One Shall Fall',                              start: 1088, end: 1092  },
+  { name: 'Special Guest: Kozyndan: The Lands',                        start: 1130, end: 1134  },
+  { name: 'Post Malone: The Lands',                                    start: 1190, end: 1194  },
+  { name: 'Angels: They\'re Just Like Us but Cooler and With Wings',   start: 1348, end: 1351  },
+  { name: 'Featuring: The Mountain Goats',                             start: 1358, end: 1367  },
+  { name: 'Featuring: Gary Baseman',                                   start: 1382, end: 1386  },
+  { name: 'Meditations on Nature',                                     start: 1399, end: 1403  },
+  { name: 'Pixel Lands 02.jpg',                                        start: 1468, end: 1472  },
+  { name: 'Paradise Frost',                                            start: 1473, end: 1477  },
+  { name: 'Chaos Vault',                                               start: 1478, end: 1482  },
+  { name: 'Raining Cats and Dogs',                                     start: 1513, end: 1515  },
+  { name: 'Brain Dead: Lands',                                         start: 1647, end: 1656  },
+  { name: 'SpongeBob SquarePants: Lands Under the Sea',                start: 1939, end: 1943  },
+  { name: 'Flower Power',                                              start: 1945, end: 1949  },
+  { name: 'Marvel\'s Spider-Man: Mana Symbiote',                       start: 1950, end: 1954  },
+  { name: 'KEXP: Where the Music Matters',                             start: 2076, end: 2080  },
+  { name: 'Chaos Vault: Dand\u00E2n',                                  start: 2144, end: 2147  },
+  { name: 'Dungeons & Dragons\u00AE: Lands of the Forgotten Realms',   start: 2509, end: 2513  },
 ];
 
 /**
