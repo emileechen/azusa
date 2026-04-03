@@ -87,8 +87,9 @@ const Scryfall = (() => {
   // ---------------------------------------------------------------------------
   function deriveLandType(card) {
     const line = card.type_line ?? '';
+    const name = card.name ?? '';
     for (const t of ['Plains', 'Island', 'Swamp', 'Mountain', 'Forest', 'Wastes']) {
-      if (line.includes(t)) return t;
+      if (line.includes(t) || name === t) return t;
     }
     return 'Other';
   }
