@@ -63,10 +63,14 @@ Azusa
       <button id="btn-table-view" class="view-toggle-btn" title="Table view">☰ Table</button>
     </div>
 
-    <button id="refresh-prices-btn" class="btn-refresh-prices">$ Refresh Prices</button>
+    <button id="refresh-prices-btn" class="btn-refresh-prices">
+      <span class="refresh-full">$ Refresh Prices</span>
+      <span class="refresh-short">$</span>
+    </button>
 
     <button id="add-card-btn" class="btn-add-card">
-      + Add Card
+      <span class="add-card-full">+ Add Card</span>
+      <span class="add-card-short">+</span>
     </button>
 
     <button id="sign-out-btn" class="btn-sign-out">Sign out</button>
@@ -78,12 +82,12 @@ Azusa
     <div class="filter-group" id="filter-type-btns">
       <span class="filter-label">Type</span>
       <button class="filter-pill active" data-type="all">All</button>
-      <button class="filter-pill" data-type="Plains">Plains</button>
-      <button class="filter-pill" data-type="Island">Island</button>
-      <button class="filter-pill" data-type="Swamp">Swamp</button>
-      <button class="filter-pill" data-type="Mountain">Mountain</button>
-      <button class="filter-pill" data-type="Forest">Forest</button>
-      <button class="filter-pill" data-type="Wastes">Wastes</button>
+      <button class="filter-pill filter-mana" data-type="Plains" title="Plains"><img src="https://svgs.scryfall.io/card-symbols/W.svg" alt="Plains" class="filter-mana-icon"/></button>
+      <button class="filter-pill filter-mana" data-type="Island" title="Island"><img src="https://svgs.scryfall.io/card-symbols/U.svg" alt="Island" class="filter-mana-icon"/></button>
+      <button class="filter-pill filter-mana" data-type="Swamp" title="Swamp"><img src="https://svgs.scryfall.io/card-symbols/B.svg" alt="Swamp" class="filter-mana-icon"/></button>
+      <button class="filter-pill filter-mana" data-type="Mountain" title="Mountain"><img src="https://svgs.scryfall.io/card-symbols/R.svg" alt="Mountain" class="filter-mana-icon"/></button>
+      <button class="filter-pill filter-mana" data-type="Forest" title="Forest"><img src="https://svgs.scryfall.io/card-symbols/G.svg" alt="Forest" class="filter-mana-icon"/></button>
+      <button class="filter-pill filter-mana" data-type="Wastes" title="Wastes"><img src="https://svgs.scryfall.io/card-symbols/C.svg" alt="Wastes" class="filter-mana-icon"/></button>
     </div>
 
     <div class="filter-divider"></div>
@@ -110,7 +114,7 @@ Azusa
       <button class="filter-pill" data-status="want">Want</button>
     </div>
 
-    <button id="filter-fav-btn" class="filter-fav-btn">★ Favourites</button>
+    <button id="filter-fav-btn" class="filter-fav-btn" title="Favourites">★</button>
 
   </div>
 
