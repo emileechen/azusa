@@ -219,6 +219,20 @@ img { display: block; }
 }
 .view-toggle-btn:hover:not(.active) { color: var(--text); }
 
+.btn-refresh-prices {
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  font-weight: 500;
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-2);
+  background: transparent;
+  transition: color 0.15s, border-color 0.15s;
+  white-space: nowrap;
+}
+.btn-refresh-prices:hover { color: var(--have); border-color: var(--have); }
+.btn-refresh-prices:disabled { opacity: 0.6; cursor: wait; }
+
 .btn-add-card {
   background: var(--gold);
   color: #111a14;
@@ -337,6 +351,7 @@ img { display: block; }
 .stats-strip .stat-fav  { color: var(--fav); }
 .stats-strip .stat-divider { color: var(--border-2); }
 .stats-strip .stat-type { font-weight: 500; }
+.stats-strip .stat-value { color: var(--have); font-weight: 600; }
 
 /* ── MAIN CONTENT ── */
 .app-main {
@@ -536,6 +551,13 @@ img { display: block; }
   gap: 3px;
   margin-left: auto;
   flex-shrink: 0;
+}
+
+.card-price {
+  padding: 0 8px 4px;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--have);
 }
 
 .card-badges {

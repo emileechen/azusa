@@ -168,6 +168,26 @@ const Scryfall = (() => {
   }
 
   // ---------------------------------------------------------------------------
+  // Pick the correct USD price from a Scryfall card's prices object based on
+  // the derived finish. Returns a string like "1.23" or null.
+  // ---------------------------------------------------------------------------
+  function priceForFinish(card) {
+    const prices = card.prices;
+    if (!prices) return null;
+    const finish = deriveFinish(card);
+    if (finish === 'nonfoil') return prices.usd ?? null;
+    if (finish === 'etched')  return prices.usd_etched ?? null;
+    return prices.usd_foil ?? null;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Fetch a single card by Scryfall UUID.
+  // ---------------------------------------------------------------------------
+  async function fetchCard(scryfallId) {
+    return throttledFetch(`${BASE}/cards/${scryfallId}`);
+  }
+
+  // ---------------------------------------------------------------------------
   // Given a card object returned from search, build the full enriched record
   // ready to be stored in Google Sheets.
   // ---------------------------------------------------------------------------
@@ -191,7 +211,9 @@ const Scryfall = (() => {
   // ---------------------------------------------------------------------------
   return {
     searchFullArtLands,
+    fetchCard,
     fetchSet,
+    priceForFinish,
     enrichCard,
     deriveFinish,
     deriveLandType,

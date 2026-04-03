@@ -350,11 +350,18 @@ function renderStats() {
     typeCounts[t] = State.cards.filter(c => c.land_type === t).length;
   }
 
+  const totalValue = State.cards.reduce((sum, c) => sum + (parseFloat(c.price) || 0), 0);
+  const haveValue  = State.cards.filter(c => c.status === 'have').reduce((sum, c) => sum + (parseFloat(c.price) || 0), 0);
+
   $('stats-strip').innerHTML =
     `<span>${total} cards</span>` +
     `<span class="stat-have">${have} have</span>` +
     `<span class="stat-want">${want} want</span>` +
     `<span class="stat-fav">★ ${fav} favourited</span>` +
+    (totalValue > 0
+      ? `<span class="stat-divider">|</span>` +
+        `<span class="stat-value" title="Have: $${haveValue.toFixed(2)}">≈ $${totalValue.toFixed(2)}</span>`
+      : '') +
     `<span class="stat-divider">|</span>` +
     LAND_TYPES.filter(t => typeCounts[t] > 0).map(t =>
       `<span class="stat-type" style="color:${LAND_COLORS[t]}">${t} ${typeCounts[t]}</span>`
@@ -480,7 +487,8 @@ function makeCardTile(card) {
         </span>
       </div>
     </div>
-    <button class="fav-btn card-fav-btn ${card.favourite ? 'all' : 'none'}" 
+    ${card.price ? `<div class="card-price">$${card.price}</div>` : ''}
+    <button class="fav-btn card-fav-btn ${card.favourite ? 'all' : 'none'}"
             title="Favourite" data-id="${card.id}">
       ${card.favourite ? '★' : '☆'}
     </button>`;
@@ -522,6 +530,7 @@ function renderTable(cards) {
         <th data-sort="land_type">Type</th>
         <th data-sort="finish">Finish</th>
         <th data-sort="status">Status</th>
+        <th data-sort="price">Price</th>
         <th data-sort="favourite">★</th>
         <th>Actions</th>
       </tr>
@@ -535,7 +544,7 @@ function renderTable(cards) {
   for (const release of releases) {
     // Release header row
     const releaseRow = el('tr', 'table-release-row');
-    releaseRow.innerHTML = `<td colspan="8">${release.name}</td>`;
+    releaseRow.innerHTML = `<td colspan="9">${release.name}</td>`;
     tbody.appendChild(releaseRow);
 
     // Card rows
@@ -553,6 +562,7 @@ function renderTable(cards) {
         <td>${landIcon(card.land_type)} <span class="type-pill" style="--type-color:${LAND_COLORS[card.land_type] || '#8a9b8e'}">${card.land_type}</span></td>
         <td>${finishIcon ? `<span class="finish-icon" data-finish="${card.finish}" title="${card.finish}">${finishIcon}</span> ` : ''}<span class="finish-badge" data-finish="${card.finish}">${card.finish}</span></td>
         <td><span class="status-badge ${card.status}">${card.status}</span></td>
+        <td class="mono">${card.price ? `$${card.price}` : '—'}</td>
         <td>
           <button class="fav-btn card-fav-btn ${card.favourite ? 'all' : 'none'}" data-id="${card.id}">
             ${card.favourite ? '★' : '☆'}
@@ -641,6 +651,55 @@ async function toggleCycleFav(cycleKey) {
     cycleCards.forEach(c => c.favourite = !newVal);
     showError('Failed to update cycle favourite: ' + e.message);
   }
+}
+
+// ---------------------------------------------------------------------------
+// REFRESH PRICES — fetch current prices from Scryfall for every card
+// ---------------------------------------------------------------------------
+async function refreshPrices() {
+  const btn = $('refresh-prices-btn');
+  if (!btn || btn.disabled) return;
+  btn.disabled = true;
+
+  const cards = State.cards;
+  const total = cards.length;
+  if (total === 0) { btn.disabled = false; return; }
+
+  const updates = [];
+  for (let i = 0; i < total; i++) {
+    const card = cards[i];
+    btn.textContent = `Updating ${i + 1}/${total}…`;
+    try {
+      const data = await Scryfall.fetchCard(card.scryfall_id);
+      const finish = card.finish;
+      let price = null;
+      if (finish === 'nonfoil')       price = data.prices?.usd ?? null;
+      else if (finish === 'etched')   price = data.prices?.usd_etched ?? null;
+      else                            price = data.prices?.usd_foil ?? null;
+
+      const priceStr = price ?? '';
+      if (priceStr !== card.price) {
+        card.price = priceStr;
+        updates.push({ rowIndex: card._rowIndex, price: priceStr });
+      }
+    } catch (e) {
+      console.warn(`Price fetch failed for ${card.scryfall_id}:`, e);
+    }
+  }
+
+  if (updates.length > 0) {
+    btn.textContent = 'Saving…';
+    try {
+      await Sheets.updatePrices(updates);
+    } catch (e) {
+      showError('Failed to save prices: ' + e.message);
+    }
+  }
+
+  btn.textContent = '$ Refresh Prices';
+  btn.disabled = false;
+  renderCollection();
+  renderStats();
 }
 
 // ---------------------------------------------------------------------------
@@ -1292,6 +1351,7 @@ document.addEventListener('DOMContentLoaded', () => {
   $('btn-table-view')?.addEventListener('click', () => setView('table'));
 
   // Add card
+  $('refresh-prices-btn')?.addEventListener('click', refreshPrices);
   $('add-card-btn')?.addEventListener('click', openAddModal);
   $('browse-btn')?.addEventListener('click', browseSet);
   $('browse-set-input')?.addEventListener('keydown', e => {
