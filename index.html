@@ -143,6 +143,10 @@ Azusa
             spellcheck="false"
             autocomplete="off"
           />
+          <label class="browse-checkbox">
+            <input id="browse-fullart" type="checkbox" checked/>
+            Full art only
+          </label>
           <button id="browse-btn" class="browse-btn">Fetch</button>
         </div>
         <div id="sld-drop-filter" class="browse-search sld-filter hidden">
@@ -184,18 +188,6 @@ Azusa
             <label>Finish</label>
             <div class="value" id="confirm-finish">—</div>
           </div>
-        </div>
-
-        <div id="confirm-drop-field" class="confirm-field hidden">
-          <label>Drop Name</label>
-          <input
-            id="confirm-drop-name"
-            class="drop-name-input"
-            type="text"
-            placeholder="e.g. Dracula, Full-Text Lands…"
-            spellcheck="false"
-            autocomplete="off"
-          />
         </div>
 
         <div class="confirm-field">
@@ -255,18 +247,6 @@ Azusa
           <label>Finish</label>
           <div class="value" id="edit-finish">—</div>
         </div>
-      </div>
-
-      <div id="edit-drop-field" class="confirm-field hidden">
-        <label>Drop Name</label>
-        <input
-          id="edit-drop-name"
-          class="drop-name-input"
-          type="text"
-          placeholder="e.g. Dracula, Full-Text Lands…"
-          spellcheck="false"
-          autocomplete="off"
-        />
       </div>
 
       <div class="confirm-field">

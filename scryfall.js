@@ -138,8 +138,9 @@ const Scryfall = (() => {
   // setCode is optional — omit to search all sets.
   // onProgress(loaded, total) is called after each page.
   // ---------------------------------------------------------------------------
-  async function searchFullArtLands(setCode, onProgress) {
-    let q = '(type:land type:basic) is:fullart';
+  async function searchFullArtLands(setCode, onProgress, { fullArtOnly = true } = {}) {
+    let q = '(type:land type:basic)';
+    if (fullArtOnly) q += ' is:fullart';
     if (setCode && setCode.trim()) {
       q += ` set:${setCode.trim().toLowerCase()}`;
     }
