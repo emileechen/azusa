@@ -394,6 +394,7 @@ img { display: block; }
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
   gap: 10px;
+  margin: 10px 0;
 }
 .cycle-grid {
   grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
@@ -895,10 +896,11 @@ img { display: block; }
 .browse-section { margin-bottom: 20px; }
 
 .browse-set-label {
-  font-size: 0.75rem;
-  color: var(--text-muted);
+  font-size: 1rem;
+  color: var(--text);
   margin-bottom: 8px;
-  font-weight: 500;
+  font-weight: 600;
+  font-family: var(--font-display);
 }
 
 .browse-cycle-label {
@@ -915,6 +917,7 @@ img { display: block; }
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
   gap: 8px;
+  margin: 8px 0;
 }
 
 .browse-tile {
@@ -964,14 +967,15 @@ img { display: block; }
 .dupe-badge {
   position: absolute;
   bottom: 4px; left: 4px; right: 4px;
-  background: rgba(106,170,94,0.9);
-  color: #111a14;
   font-size: 0.6rem;
   font-weight: 600;
   text-align: center;
   padding: 2px 4px;
   border-radius: 3px;
+  color: #111a14;
 }
+.dupe-badge.have { background: rgba(106,170,94,0.9); }
+.dupe-badge.want { background: rgba(184,151,106,0.9); }
 
 .browse-info {
   display: flex;
@@ -1036,7 +1040,7 @@ img { display: block; }
 
 .confirm-art {
   width: 100%;
-  border-radius: var(--radius-sm);
+  border-radius: 12px;
   border: 1px solid var(--border);
 }
 
