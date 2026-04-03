@@ -228,7 +228,7 @@ function groupCards(cards) {
 // A cycle = same finish, contains at least 2 of the 5 basic land types
 // (full 5-type cycle is ideal but partials are grouped too)
 function detectCycles(cards) {
-  // Group by finish + set_code (same finish within same actual set = cycle candidate)
+  // Group by finish + set_code
   const finishGroups = {};
   for (const card of cards) {
     const key = `${card.set_code}__${card.finish}`;
@@ -239,21 +239,45 @@ function detectCycles(cards) {
   const cycles = [];
   const inCycle = new Set();
 
-  for (const [key, group] of Object.entries(finishGroups)) {
-    // Only treat as a cycle if 2+ basic land types present
+  for (const [, group] of Object.entries(finishGroups)) {
     const types = new Set(group.map(c => c.land_type).filter(t => LAND_TYPES.includes(t)));
-    if (types.size >= 2) {
-      cycles.push({
-        key,
-        finish: group[0].finish,
-        setCode: group[0].set_code,
-        cards: group.sort((a, b) =>
-          LAND_TYPES.indexOf(a.land_type) - LAND_TYPES.indexOf(b.land_type)
-        ),
-      });
-      group.forEach(c => inCycle.add(c.id));
+    if (types.size < 2) continue;
+
+    // Sort by land type then collector number so we can split into art cycles
+    group.sort((a, b) =>
+      LAND_TYPES.indexOf(a.land_type) - LAND_TYPES.indexOf(b.land_type)
+      || parseInt(a.collector_num) - parseInt(b.collector_num)
+    );
+
+    // Split into per-type buckets, then zip into cycles of 5 (WUBRG order)
+    const byType = {};
+    for (const card of group) {
+      if (!LAND_TYPES.includes(card.land_type)) continue;
+      if (!byType[card.land_type]) byType[card.land_type] = [];
+      byType[card.land_type].push(card);
+    }
+
+    const maxPerType = Math.max(...Object.values(byType).map(a => a.length));
+    for (let i = 0; i < maxPerType; i++) {
+      const cycleCards = [];
+      for (const t of LAND_TYPES) {
+        if (byType[t]?.[i]) cycleCards.push(byType[t][i]);
+      }
+      if (cycleCards.length >= 2) {
+        cycles.push({
+          key: `${group[0].set_code}__${group[0].finish}__${i}`,
+          finish: group[0].finish,
+          setCode: group[0].set_code,
+          cards: cycleCards,
+        });
+        cycleCards.forEach(c => inCycle.add(c.id));
+      }
     }
   }
+
+  // Sort cycles: nonfoil first, then foil, then special
+  const finishOrder = f => f === 'nonfoil' ? 0 : f === 'foil' ? 1 : 2;
+  cycles.sort((a, b) => finishOrder(a.finish) - finishOrder(b.finish));
 
   // Solo cards not part of any cycle
   const solos = cards.filter(c => !inCycle.has(c.id));
@@ -375,7 +399,7 @@ function renderGrid(cards) {
         <div class="cycle-header">
           <span class="cycle-label">
             <span class="finish-badge" data-finish="${cycle.finish}">${cycle.finish}</span>
-            <span class="cycle-tag">cycle · ${cycle.cards.length} cards</span>
+            <span class="cycle-tag">${cycle.cards.length} cards</span>
           </span>
           <button class="fav-btn cycle-fav-btn ${state}" 
                   title="Favourite cycle"
@@ -383,7 +407,7 @@ function renderGrid(cards) {
             ${state === 'all' ? '★' : state === 'some' ? '⯨' : '☆'}
           </button>
         </div>
-        <div class="card-grid"></div>`;
+        <div class="card-grid cycle-grid"></div>`;
       const grid = cycleEl.querySelector('.card-grid');
       cycle.cards.forEach(card => grid.appendChild(makeCardTile(card)));
       releaseEl.appendChild(cycleEl);
@@ -717,42 +741,61 @@ function renderSldBrowseGrid(cards) {
     header.innerHTML = `<div class="browse-set-label">${drop.name} <span class="text-muted small">(${drop.cards.length})</span></div>`;
     header.appendChild(makeSelectAllBtn(drop.cards, section, drop.name));
     section.appendChild(header);
-    const grid = el('div', 'browse-grid');
 
+    // Group by finish within each drop
+    const byFinish = {};
     for (const card of drop.cards) {
-      const finish = Scryfall.deriveFinish(card);
-      const landType = Scryfall.deriveLandType(card);
-      const imgUrl = Scryfall.imageUrl(card.id);
-      const isFoil = finish !== 'nonfoil';
-
-      const tile = el('div', 'browse-tile');
-      if (isFoil) tile.setAttribute('data-foil', 'true');
-      tile.setAttribute('data-finish', finish);
-
-      const dupe = Sheets.findDuplicate(State.cards, card.set, card.collector_number, finish);
-
-      const finishIcon = finishAbbrev(finish);
-
-      tile.innerHTML = `
-        <div class="browse-art-wrap">
-          <img src="${imgUrl}" alt="${landType}" loading="lazy"
-               onerror="this.style.background='#182420'"/>
-          ${dupe ? '<div class="dupe-badge">In collection</div>' : ''}
-          ${isFoil ? '<div class="foil-shimmer"></div>' : ''}
-        </div>
-        <div class="browse-info-compact">
-          <span class="mono">#${card.collector_number}</span>
-          <span class="browse-icons">
-            ${finishIcon ? `<span class="finish-icon" data-finish="${finish}" title="${finish}">${finishIcon}</span>` : ''}
-            ${landIcon(landType)}
-          </span>
-        </div>`;
-
-      tile.addEventListener('click', () => selectBrowseCard(card, tile, drop.name));
-      grid.appendChild(tile);
+      const f = Scryfall.deriveFinish(card);
+      if (!byFinish[f]) byFinish[f] = [];
+      byFinish[f].push(card);
     }
 
-    section.appendChild(grid);
+    const finishOrder = f => f === 'nonfoil' ? 0 : f === 'foil' ? 1 : 2;
+    const sortedFinishes = Object.keys(byFinish).sort((a, b) => finishOrder(a) - finishOrder(b));
+
+    for (const finish of sortedFinishes) {
+      const group = byFinish[finish];
+      if (sortedFinishes.length > 1) {
+        const cycleLabel = el('div', 'browse-cycle-label', finish);
+        section.appendChild(cycleLabel);
+      }
+      const grid = el('div', 'browse-grid');
+
+      for (const card of group) {
+        const landType = Scryfall.deriveLandType(card);
+        const imgUrl = Scryfall.imageUrl(card.id);
+        const isFoil = finish !== 'nonfoil';
+
+        const tile = el('div', 'browse-tile');
+        if (isFoil) tile.setAttribute('data-foil', 'true');
+        tile.setAttribute('data-finish', finish);
+
+        const dupe = Sheets.findDuplicate(State.cards, card.set, card.collector_number, finish);
+
+        const finishIcon = finishAbbrev(finish);
+
+        tile.innerHTML = `
+          <div class="browse-art-wrap">
+            <img src="${imgUrl}" alt="${landType}" loading="lazy"
+                 onerror="this.style.background='#182420'"/>
+            ${dupe ? '<div class="dupe-badge">In collection</div>' : ''}
+            ${isFoil ? '<div class="foil-shimmer"></div>' : ''}
+          </div>
+          <div class="browse-info-compact">
+            <span class="mono">#${card.collector_number}</span>
+            <span class="browse-icons">
+              ${finishIcon ? `<span class="finish-icon" data-finish="${finish}" title="${finish}">${finishIcon}</span>` : ''}
+              ${landIcon(landType)}
+            </span>
+          </div>`;
+
+        tile.addEventListener('click', () => selectBrowseCard(card, tile, drop.name));
+        grid.appendChild(tile);
+      }
+
+      section.appendChild(grid);
+    }
+
     resultsEl.appendChild(section);
   }
 }
