@@ -7,8 +7,9 @@ A personal web app for tracking your Magic: The Gathering full art land collecti
 ## Features
 
 - **Browse by set** — fetch full art basics from any set via Scryfall
-- **Finish auto-detection** — surge foil, galaxy foil, etched foil, and more are identified automatically
-- **Cycle grouping** — cards from the same set and finish are grouped as cycles
+- **Finish auto-detection** — surge foil, galaxy foil, etched foil, and more are identified automatically with emoji icons (⚪/✨/💎)
+- **Cycle grouping** — cards from the same set and finish are grouped as cycles with consistent sizing
+- **Price tracking** — per-card, per-cycle, and collection-wide pricing with owned/need breakdowns
 - **Favourite** — star individual cards or entire cycles
 - **Two views** — card grid with art thumbnails, or sortable table
 - **Google Sheets backend** — your data lives in a sheet you own and control
@@ -140,10 +141,7 @@ Card art is fetched live from Scryfall — nothing is stored locally.
 ## Roadmap
 
 - v1.1 — Showcase cards tab
-- v1.2 — Condition tracking (NM / LP / MP / HP / DMG)
-- v1.3 — Price fetch + collection value
-- v1.4 — CSV export
-- v2.0 — Trade tracking
+- v1.2 — CSV export
 
 ---
 
