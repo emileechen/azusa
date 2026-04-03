@@ -9,7 +9,7 @@
 const CONFIG = {
   CLIENT_ID:      '951154980013-3eg1bkbhr2u1ph3c7qtafc5b6q5rmuhr.apps.googleusercontent.com',
   SHEET_ID:       '1Gmw4Uvz41P8CpIsYIYLUCdxJqO2UgLmZ2R5QzVi98MY',
-  DEMO_SHEET_ID:  '',
+  DEMO_SHEET_ID:  '1o1q5XrGJ6aPAMbrJ1iBGGHmuOBT0NP1GqGM44IT98ko',
   SCOPES:         'https://www.googleapis.com/auth/spreadsheets',
 };
 
