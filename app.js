@@ -1486,8 +1486,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Called by Google Identity Services script onload
 function initGoogleAuth() {
-  if (State.readOnly) return;
   initAuth();
+  if (State.readOnly) return;
   // Prefer localStorage override, fall back to hardcoded CONFIG.SHEET_ID
   const saved = localStorage.getItem('azusa_sheet_id') || CONFIG.SHEET_ID;
   if (saved) {
