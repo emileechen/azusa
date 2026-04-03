@@ -2,6 +2,9 @@
  * sheets.js — Azusa
  * Google Sheets API v4 wrapper.
  * Handles all CRUD operations against the `lands` tab.
+ *
+ * Header-aware: column positions are derived from the sheet's header row,
+ * so columns can be in any order or have extra columns without breaking.
  */
 
 const Sheets = (() => {
@@ -13,6 +16,14 @@ const Sheets = (() => {
   // Set by init()
   let sheetId   = null;
   let getToken  = null; // function that returns a valid OAuth access token
+
+  // Header mapping: populated by ensureHeaders()
+  // colIndex[colName] = 0-based column index
+  // colLetter[colName] = spreadsheet column letter (A, B, …, Z, AA, …)
+  let headerRow = [];
+  let colIndex  = {};
+  let colLetter = {};
+  let lastCol   = 'A'; // letter of the rightmost known column
 
   // ---------------------------------------------------------------------------
   // Init — call once after OAuth sign-in
@@ -56,30 +67,69 @@ const Sheets = (() => {
   }
 
   // ---------------------------------------------------------------------------
-  // Ensure header row exists. Called on first load.
-  // If Row 1 is empty, writes the header.
+  // Convert a 0-based column index to a spreadsheet letter (0→A, 25→Z, 26→AA)
+  // ---------------------------------------------------------------------------
+  function indexToLetter(i) {
+    let s = '';
+    let n = i;
+    while (n >= 0) {
+      s = String.fromCharCode(65 + (n % 26)) + s;
+      n = Math.floor(n / 26) - 1;
+    }
+    return s;
+  }
+
+  // ---------------------------------------------------------------------------
+  // Build the colIndex / colLetter maps from a header row array.
+  // ---------------------------------------------------------------------------
+  function buildHeaderMap(header) {
+    headerRow = header;
+    colIndex  = {};
+    colLetter = {};
+    for (let i = 0; i < header.length; i++) {
+      colIndex[header[i]]  = i;
+      colLetter[header[i]] = indexToLetter(i);
+    }
+    lastCol = indexToLetter(header.length - 1);
+  }
+
+  // ---------------------------------------------------------------------------
+  // Ensure header row exists and contains all expected columns.
+  // Appends any missing columns to the right.
   // ---------------------------------------------------------------------------
   async function ensureHeaders() {
-    const data = await apiFetch(rangeUrl(`${SHEET_NAME}!A1:K1`));
+    // Read a wide range so we don't miss columns
+    const data = await apiFetch(rangeUrl(`${SHEET_NAME}!1:1`));
     const existing = data.values?.[0] ?? [];
+
     if (existing.length === 0) {
       // Brand new sheet — write full header
       await apiFetch(
-        rangeUrl(`${SHEET_NAME}!A1:K1`, '?valueInputOption=RAW'),
+        rangeUrl(`${SHEET_NAME}!A1`, '?valueInputOption=RAW'),
         {
           method: 'PUT',
           body: JSON.stringify({ values: [COLS] }),
         }
       );
-    } else if (existing.length === 10 && !existing.includes('price')) {
-      // Existing sheet missing the price column
+      buildHeaderMap(COLS);
+      return;
+    }
+
+    // Check for missing columns
+    const missing = COLS.filter(c => !existing.includes(c));
+    if (missing.length > 0) {
+      const startLetter = indexToLetter(existing.length);
+      const endLetter   = indexToLetter(existing.length + missing.length - 1);
       await apiFetch(
-        rangeUrl(`${SHEET_NAME}!K1`, '?valueInputOption=RAW'),
+        rangeUrl(`${SHEET_NAME}!${startLetter}1:${endLetter}1`, '?valueInputOption=RAW'),
         {
           method: 'PUT',
-          body: JSON.stringify({ values: [['price']] }),
+          body: JSON.stringify({ values: [missing] }),
         }
       );
+      buildHeaderMap([...existing, ...missing]);
+    } else {
+      buildHeaderMap(existing);
     }
   }
 
@@ -88,16 +138,17 @@ const Sheets = (() => {
   // ---------------------------------------------------------------------------
   async function readAll() {
     await ensureHeaders();
-    const data = await apiFetch(rangeUrl(`${SHEET_NAME}!A:K`));
+    const data = await apiFetch(rangeUrl(`${SHEET_NAME}!A:${lastCol}`));
     const rows = data.values ?? [];
     if (rows.length <= 1) return []; // header only
 
-    const [header, ...body] = rows;
+    const [, ...body] = rows;
     return body.map((row, i) => {
       const obj = {};
-      COLS.forEach((col, ci) => {
-        obj[col] = row[ci] ?? '';
-      });
+      for (const col of COLS) {
+        const ci = colIndex[col];
+        obj[col] = ci !== undefined ? (row[ci] ?? '') : '';
+      }
       // Coerce types
       obj.favourite = obj.favourite === 'TRUE';
       obj._rowIndex = i + 2; // 1-based, skip header
@@ -106,20 +157,31 @@ const Sheets = (() => {
   }
 
   // ---------------------------------------------------------------------------
+  // Build a row array ordered by the sheet's header, from a card object.
+  // ---------------------------------------------------------------------------
+  function cardToRow(card, idOverride) {
+    const row = new Array(headerRow.length).fill('');
+    for (const col of COLS) {
+      const ci = colIndex[col];
+      if (ci === undefined) continue;
+      if (col === 'id' && idOverride) { row[ci] = idOverride; continue; }
+      const val = card[col];
+      if (col === 'favourite') { row[ci] = val ? 'TRUE' : 'FALSE'; continue; }
+      row[ci] = val ?? '';
+    }
+    return row;
+  }
+
+  // ---------------------------------------------------------------------------
   // Append a new card row. `card` is a plain object with keys matching COLS.
   // Generates a UUID for the id field.
   // ---------------------------------------------------------------------------
   async function appendCard(card) {
     const id = crypto.randomUUID().replace(/-/g, '').slice(0, 8);
-    const row = COLS.map(col => {
-      if (col === 'id') return id;
-      const val = card[col];
-      if (col === 'favourite') return val ? 'TRUE' : 'FALSE';
-      return val ?? '';
-    });
+    const row = cardToRow(card, id);
 
     await apiFetch(
-      `${sheetsBase()}/values/${encodeURIComponent(`${SHEET_NAME}!A:K`)}:append?valueInputOption=RAW&insertDataOption=INSERT_ROWS`,
+      `${sheetsBase()}/values/${encodeURIComponent(`${SHEET_NAME}!A:${lastCol}`)}:append?valueInputOption=RAW&insertDataOption=INSERT_ROWS`,
       {
         method: 'POST',
         body: JSON.stringify({ values: [row] }),
@@ -137,16 +199,11 @@ const Sheets = (() => {
     const rows = cards.map(card => {
       const id = crypto.randomUUID().replace(/-/g, '').slice(0, 8);
       results.push({ ...card, id });
-      return COLS.map(col => {
-        if (col === 'id') return id;
-        const val = card[col];
-        if (col === 'favourite') return val ? 'TRUE' : 'FALSE';
-        return val ?? '';
-      });
+      return cardToRow(card, id);
     });
 
     await apiFetch(
-      `${sheetsBase()}/values/${encodeURIComponent(`${SHEET_NAME}!A:K`)}:append?valueInputOption=RAW&insertDataOption=INSERT_ROWS`,
+      `${sheetsBase()}/values/${encodeURIComponent(`${SHEET_NAME}!A:${lastCol}`)}:append?valueInputOption=RAW&insertDataOption=INSERT_ROWS`,
       {
         method: 'POST',
         body: JSON.stringify({ values: rows }),
@@ -162,20 +219,23 @@ const Sheets = (() => {
   // ---------------------------------------------------------------------------
   async function updateCard(rowIndex, updates) {
     // First read the current row
-    const data = await apiFetch(rangeUrl(`${SHEET_NAME}!A${rowIndex}:K${rowIndex}`));
+    const data = await apiFetch(rangeUrl(`${SHEET_NAME}!A${rowIndex}:${lastCol}${rowIndex}`));
     const current = data.values?.[0] ?? [];
 
-    const row = COLS.map((col, ci) => {
-      if (col in updates) {
-        const val = updates[col];
-        if (col === 'favourite') return val ? 'TRUE' : 'FALSE';
-        return val ?? '';
-      }
-      return current[ci] ?? '';
-    });
+    const row = [...current];
+    // Extend if needed
+    while (row.length < headerRow.length) row.push('');
+
+    for (const col of COLS) {
+      if (!(col in updates)) continue;
+      const ci = colIndex[col];
+      if (ci === undefined) continue;
+      const val = updates[col];
+      row[ci] = col === 'favourite' ? (val ? 'TRUE' : 'FALSE') : (val ?? '');
+    }
 
     await apiFetch(
-      rangeUrl(`${SHEET_NAME}!A${rowIndex}:K${rowIndex}`, '?valueInputOption=RAW'),
+      rangeUrl(`${SHEET_NAME}!A${rowIndex}:${lastCol}${rowIndex}`, '?valueInputOption=RAW'),
       {
         method: 'PUT',
         body: JSON.stringify({ values: [row] }),
@@ -222,10 +282,11 @@ const Sheets = (() => {
   // Batch updates all in a single Sheets API call for efficiency.
   // ---------------------------------------------------------------------------
   async function setFavourite(rowIndices, value) {
+    const letter = colLetter['favourite'];
     const data = { valueInputOption: 'RAW', data: [] };
     for (const rowIndex of rowIndices) {
       data.data.push({
-        range:  `${SHEET_NAME}!J${rowIndex}`,
+        range:  `${SHEET_NAME}!${letter}${rowIndex}`,
         values: [[value ? 'TRUE' : 'FALSE']],
       });
     }
@@ -242,8 +303,9 @@ const Sheets = (() => {
   // Set status (have/want) on one row.
   // ---------------------------------------------------------------------------
   async function setStatus(rowIndex, status) {
+    const letter = colLetter['status'];
     await apiFetch(
-      rangeUrl(`${SHEET_NAME}!I${rowIndex}`, '?valueInputOption=RAW'),
+      rangeUrl(`${SHEET_NAME}!${letter}${rowIndex}`, '?valueInputOption=RAW'),
       {
         method: 'PUT',
         body: JSON.stringify({ values: [[status]] }),
@@ -269,10 +331,11 @@ const Sheets = (() => {
   // ---------------------------------------------------------------------------
   async function updatePrices(entries) {
     if (entries.length === 0) return;
+    const letter = colLetter['price'];
     const data = { valueInputOption: 'RAW', data: [] };
     for (const { rowIndex, price } of entries) {
       data.data.push({
-        range:  `${SHEET_NAME}!K${rowIndex}`,
+        range:  `${SHEET_NAME}!${letter}${rowIndex}`,
         values: [[price ?? '']],
       });
     }
