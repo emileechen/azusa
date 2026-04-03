@@ -188,6 +188,10 @@ function groupKey(card) {
   if (card.set_code === 'sld' && card.drop_name) {
     return `sld__${card.drop_name}`;
   }
+  // SLD child sets (e.g. SLP) — group by their own set, not parent
+  if (card.parent_set_code === 'sld') {
+    return card.drop_name ? `sld__${card.drop_name}` : card.set_code;
+  }
   return card.parent_set_code || card.set_code;
 }
 
@@ -391,25 +395,37 @@ function renderGrid(cards) {
 
     const { cycles, solos } = release.cycles;
 
-    // Render cycles
+    // Group cycles by finish so same-finish cycles share one box
+    const cyclesByFinish = {};
     for (const cycle of cycles) {
-      const state = cycFavState(cycle);
+      if (!cyclesByFinish[cycle.finish]) cyclesByFinish[cycle.finish] = [];
+      cyclesByFinish[cycle.finish].push(cycle);
+    }
+
+    for (const [finish, finishCycles] of Object.entries(cyclesByFinish)) {
+      const allCards = finishCycles.flatMap(c => c.cards);
+      const allKeys = finishCycles.map(c => c.key);
+      const state = cycFavState({ cards: allCards });
       const cycleEl = el('div', 'cycle-group');
       cycleEl.innerHTML = `
         <div class="cycle-header">
           <span class="cycle-label">
-            <span class="finish-badge" data-finish="${cycle.finish}">${cycle.finish}</span>
-            <span class="cycle-tag">${cycle.cards.length} cards</span>
+            <span class="finish-badge" data-finish="${finish}">${finish}</span>
+            <span class="cycle-tag">${allCards.length} cards</span>
           </span>
-          <button class="fav-btn cycle-fav-btn ${state}" 
+          <button class="fav-btn cycle-fav-btn ${state}"
                   title="Favourite cycle"
-                  data-cycle-key="${cycle.key}">
+                  data-cycle-key="${allKeys.join(',')}">
             ${state === 'all' ? '★' : state === 'some' ? '⯨' : '☆'}
           </button>
-        </div>
-        <div class="card-grid cycle-grid"></div>`;
-      const grid = cycleEl.querySelector('.card-grid');
-      cycle.cards.forEach(card => grid.appendChild(makeCardTile(card)));
+        </div>`;
+
+      for (const cycle of finishCycles) {
+        const grid = el('div', 'card-grid cycle-grid');
+        cycle.cards.forEach(card => grid.appendChild(makeCardTile(card)));
+        cycleEl.appendChild(grid);
+      }
+
       releaseEl.appendChild(cycleEl);
     }
 
@@ -599,11 +615,15 @@ async function toggleCardStatus(cardId) {
 // TOGGLE FAVOURITE — cycle
 // ---------------------------------------------------------------------------
 async function toggleCycleFav(cycleKey) {
-  // Find all cards in this cycle across State.cards
-  const [setCode, finish] = cycleKey.split('__');
-  const cycleCards = State.cards.filter(
-    c => c.set_code === setCode && c.finish === finish
-  );
+  // Support comma-separated keys (multiple art cycles grouped by finish)
+  const keys = cycleKey.split(',');
+  const cycleCards = [];
+  for (const key of keys) {
+    const [setCode, finish] = key.split('__');
+    cycleCards.push(...State.cards.filter(
+      c => c.set_code === setCode && c.finish === finish
+    ));
+  }
   if (!cycleCards.length) return;
 
   const state = cycFavState({ cards: cycleCards });
@@ -778,7 +798,7 @@ function renderSldBrowseGrid(cards) {
           <div class="browse-art-wrap">
             <img src="${imgUrl}" alt="${landType}" loading="lazy"
                  onerror="this.style.background='#182420'"/>
-            ${dupe ? '<div class="dupe-badge">In collection</div>' : ''}
+            ${dupe ? `<div class="dupe-badge ${dupe.status}">${dupe.status === 'have' ? 'Owned' : 'Want'}</div>` : ''}
             ${isFoil ? '<div class="foil-shimmer"></div>' : ''}
           </div>
           <div class="browse-info-compact">
@@ -837,28 +857,61 @@ function renderBrowseGrid(cards) {
     for (const [finish, group] of Object.entries(finishGroups)) {
       const types = new Set(group.map(c => Scryfall.deriveLandType(c)).filter(t => LAND_TYPES.includes(t)));
       if (types.size >= 2) {
-        const sorted = group.sort((a, b) =>
+        // Split into per-type buckets, then zip into WUBRG rows
+        group.sort((a, b) =>
           LAND_TYPES.indexOf(Scryfall.deriveLandType(a)) - LAND_TYPES.indexOf(Scryfall.deriveLandType(b))
           || parseInt(a.collector_number) - parseInt(b.collector_number)
         );
-        cycles.push({ finish, cards: sorted });
-        browseCycles.push({ finish, cards: sorted });
+        const byType = {};
+        for (const card of group) {
+          const t = Scryfall.deriveLandType(card);
+          if (!LAND_TYPES.includes(t)) continue;
+          if (!byType[t]) byType[t] = [];
+          byType[t].push(card);
+        }
+        const maxPerType = Math.max(...Object.values(byType).map(a => a.length));
+        for (let i = 0; i < maxPerType; i++) {
+          const rowCards = [];
+          for (const t of LAND_TYPES) {
+            if (byType[t]?.[i]) rowCards.push(byType[t][i]);
+          }
+          if (rowCards.length >= 2) {
+            cycles.push({ finish, cards: rowCards });
+            browseCycles.push({ finish, cards: rowCards });
+          }
+        }
       } else {
         soloCards.push(...group);
       }
     }
 
+    // Group browse cycles by finish into one section
+    const cyclesByFinish = {};
     for (const cycle of cycles) {
+      if (!cyclesByFinish[cycle.finish]) cyclesByFinish[cycle.finish] = [];
+      cyclesByFinish[cycle.finish].push(cycle);
+    }
+
+    const finishOrder = f => f === 'nonfoil' ? 0 : f === 'foil' ? 1 : 2;
+    const sortedFinishes = Object.keys(cyclesByFinish).sort((a, b) => finishOrder(a) - finishOrder(b));
+
+    for (const finish of sortedFinishes) {
+      const finishCycles = cyclesByFinish[finish];
+      const allCards = finishCycles.flatMap(c => c.cards);
       const cycleWrap = el('div', 'browse-cycle-wrap');
       const cycleHeader = el('div', 'browse-cycle-header');
-      cycleHeader.innerHTML = `<span class="browse-cycle-label">${cycle.finish}</span>`;
-      cycleHeader.appendChild(makeSelectAllBtn(cycle.cards, cycleWrap));
+      cycleHeader.innerHTML = `<span class="browse-cycle-label">${finish}</span>`;
+      cycleHeader.appendChild(makeSelectAllBtn(allCards, cycleWrap));
       cycleWrap.appendChild(cycleHeader);
-      const grid = el('div', 'browse-grid');
-      for (const card of cycle.cards) {
-        grid.appendChild(makeBrowseTile(card));
+
+      for (const cycle of finishCycles) {
+        const grid = el('div', 'browse-grid');
+        for (const card of cycle.cards) {
+          grid.appendChild(makeBrowseTile(card));
+        }
+        cycleWrap.appendChild(grid);
       }
-      cycleWrap.appendChild(grid);
+
       section.appendChild(cycleWrap);
     }
 
@@ -897,7 +950,7 @@ function makeBrowseTile(card) {
     <div class="browse-art-wrap">
       <img src="${imgUrl}" alt="${landType}" loading="lazy"
            onerror="this.style.background='#161b22'"/>
-      ${dupe ? '<div class="dupe-badge">In collection</div>' : ''}
+      ${dupe ? `<div class="dupe-badge ${dupe.status}">${dupe.status === 'have' ? 'Owned' : 'Want'}</div>` : ''}
       ${isFoil ? '<div class="foil-shimmer"></div>' : ''}
     </div>
     <div class="browse-info-compact">
@@ -923,6 +976,7 @@ let browseCycles = []; // array of { finish, cards[] } — detected cycles from 
 function selectBrowseCard(card, tileEl, clusterLabel) {
   // Toggle selection
   const key = browseKey(card);
+
   if (selectedBrowseCards.has(key)) {
     selectedBrowseCards.delete(key);
     tileEl.classList.remove('selected');
@@ -942,11 +996,13 @@ function updateSelectionPanel() {
   if (count === 0) {
     panel.classList.add('hidden');
     $btn.textContent = 'Save';
+    $('deselect-all-btn').classList.add('hidden');
     return;
   }
 
   panel.classList.remove('hidden');
   $btn.textContent = count === 1 ? 'Save' : `Save (${count})`;
+  $('deselect-all-btn').classList.toggle('hidden', count < 2);
 
   // Show last selected card's preview
   const last = [...selectedBrowseCards.values()].at(-1);
@@ -1079,8 +1135,20 @@ async function saveCard() {
       await Sheets.appendCards(enriched);
     }
 
-    closeModal();
+    // Clear selection and refresh dupe badges without closing
+    selectedBrowseCards.clear();
+    document.querySelectorAll('.browse-tile.selected').forEach(t => t.classList.remove('selected'));
+    updateSelectionPanel();
     await loadCollection();
+    // Re-render browse to update dupe badges
+    if (State.browseCards.length > 0) {
+      const setCode = $('browse-set-input').value.trim();
+      if (setCode.toLowerCase() === 'sld') {
+        renderSldBrowseGrid(State.browseCards);
+      } else {
+        renderBrowseGrid(State.browseCards);
+      }
+    }
   } catch (e) {
     console.error('Save failed:', e);
     showError('Failed to save: ' + (e.message || 'Network error — check your connection'));
@@ -1231,6 +1299,11 @@ document.addEventListener('DOMContentLoaded', () => {
   });
   $('sld-drop-filter-input')?.addEventListener('input', filterSldBrowse);
   $('save-card-btn')?.addEventListener('click', saveCard);
+  $('deselect-all-btn')?.addEventListener('click', () => {
+    selectedBrowseCards.clear();
+    document.querySelectorAll('.browse-tile.selected').forEach(t => t.classList.remove('selected'));
+    updateSelectionPanel();
+  });
   $('cancel-modal-btn')?.addEventListener('click', closeModal);
   $('modal-overlay')?.addEventListener('click', e => {
     if (e.target === $('modal-overlay')) closeModal();
