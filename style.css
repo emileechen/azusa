@@ -472,6 +472,8 @@ img { display: block; }
   display: flex; align-items: center; justify-content: center;
   transition: background 0.1s, border-color 0.1s;
 }
+.card-action-btn.scryfall-btn      { text-decoration: none; }
+.card-action-btn.scryfall-btn:hover { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
 .card-action-btn.delete-btn:hover { background: var(--want-bg); border-color: var(--want); color: var(--want); }
 .card-action-btn.edit-btn:hover   { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
 
@@ -727,6 +729,8 @@ img { display: block; }
   margin-right: 2px;
 }
 .table-action-btn:hover { color: var(--text); background: var(--surface-2); }
+.table-action-btn.scryfall-btn { text-decoration: none; }
+.table-action-btn.scryfall-btn:hover { color: var(--accent); }
 .table-action-btn.delete-btn:hover { color: var(--want); }
 
 /* ============================================================

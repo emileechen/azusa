@@ -442,6 +442,7 @@ function makeCardTile(card) {
       <img class="card-art" src="${imgUrl}" alt="${card.land_type}" loading="lazy"
            onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 488 680%22><rect width=%22488%22 height=%22680%22 fill=%22%23182420%22/><text x=%22244%22 y=%22340%22 text-anchor=%22middle%22 fill=%22%238a9b8e%22 font-size=%2248%22>${card.land_type[0]}</text></svg>'"/>
       <div class="card-overlay">
+        <a class="card-action-btn scryfall-btn" href="https://scryfall.com/card/${card.set_code}/${card.collector_num}" target="_blank" rel="noopener" title="View on Scryfall">↗</a>
         <button class="card-action-btn status-btn" title="Switch to ${card.status === 'have' ? 'want' : 'have'}" data-id="${card.id}">⇄</button>
         <button class="card-action-btn delete-btn" title="Delete" data-id="${card.id}">✕</button>
       </div>
@@ -463,6 +464,7 @@ function makeCardTile(card) {
     </button>`;
 
   // Events
+  tile.querySelector('.scryfall-btn').addEventListener('click', e => e.stopPropagation());
   tile.querySelector('.status-btn').addEventListener('click', e => {
     e.stopPropagation(); toggleCardStatus(card.id);
   });
@@ -535,6 +537,7 @@ function renderTable(cards) {
           </button>
         </td>
         <td class="table-actions">
+          <a class="table-action-btn scryfall-btn" href="https://scryfall.com/card/${card.set_code}/${card.collector_num}" target="_blank" rel="noopener" title="View on Scryfall">↗</a>
           <button class="table-action-btn status-btn" data-id="${card.id}" title="Switch to ${card.status === 'have' ? 'want' : 'have'}">⇄</button>
           <button class="table-action-btn delete-btn" data-id="${card.id}">✕</button>
         </td>`;
