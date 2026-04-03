@@ -74,6 +74,30 @@ function landIcon(landType) {
   return `<span class="land-icon-text" style="color:${LAND_COLORS[landType]}">${landType[0]}</span>`;
 }
 
+// Bucket cards by land type and zip into WUBRG-ordered rows.
+// typeFn(card) returns the land type string.
+// Returns array of arrays (each sub-array is one cycle row, min 2 cards).
+function zipCycleRows(cards, typeFn) {
+  const byType = {};
+  for (const card of cards) {
+    const t = typeFn(card);
+    if (!LAND_TYPES.includes(t)) continue;
+    if (!byType[t]) byType[t] = [];
+    byType[t].push(card);
+  }
+  if (Object.keys(byType).length < 2) return [];
+  const rows = [];
+  const maxPerType = Math.max(...Object.values(byType).map(a => a.length));
+  for (let i = 0; i < maxPerType; i++) {
+    const row = [];
+    for (const t of LAND_TYPES) {
+      if (byType[t]?.[i]) row.push(byType[t][i]);
+    }
+    if (row.length >= 2) rows.push(row);
+  }
+  return rows;
+}
+
 function finishAbbrev(finish) {
   if (finish === 'nonfoil') return '⚪';
   if (finish === 'foil') return '✨';
@@ -185,12 +209,13 @@ async function resolveParentNames() {
 
 // Returns group key for a card (drop name for SLD, else parent set or own set)
 function groupKey(card) {
-  if (card.set_code === 'sld' && card.drop_name) {
-    return `sld__${card.drop_name}`;
+  if (card.set_code === 'sld') {
+    const name = sldDropName(card.collector_num);
+    return name ? `sld__${name}` : 'sld';
   }
   // SLD child sets (e.g. SLP) — group by their own set, not parent
   if (card.parent_set_code === 'sld') {
-    return card.drop_name ? `sld__${card.drop_name}` : card.set_code;
+    return card.set_code;
   }
   return card.parent_set_code || card.set_code;
 }
@@ -253,30 +278,16 @@ function detectCycles(cards) {
       || parseInt(a.collector_num) - parseInt(b.collector_num)
     );
 
-    // Split into per-type buckets, then zip into cycles of 5 (WUBRG order)
-    const byType = {};
-    for (const card of group) {
-      if (!LAND_TYPES.includes(card.land_type)) continue;
-      if (!byType[card.land_type]) byType[card.land_type] = [];
-      byType[card.land_type].push(card);
-    }
-
-    const maxPerType = Math.max(...Object.values(byType).map(a => a.length));
-    for (let i = 0; i < maxPerType; i++) {
-      const cycleCards = [];
-      for (const t of LAND_TYPES) {
-        if (byType[t]?.[i]) cycleCards.push(byType[t][i]);
-      }
-      if (cycleCards.length >= 2) {
-        cycles.push({
-          key: `${group[0].set_code}__${group[0].finish}__${i}`,
-          finish: group[0].finish,
-          setCode: group[0].set_code,
-          cards: cycleCards,
-        });
-        cycleCards.forEach(c => inCycle.add(c.id));
-      }
-    }
+    const rows = zipCycleRows(group, c => c.land_type);
+    rows.forEach((cycleCards, i) => {
+      cycles.push({
+        key: `${group[0].set_code}__${group[0].finish}__${i}`,
+        finish: group[0].finish,
+        setCode: group[0].set_code,
+        cards: cycleCards,
+      });
+      cycleCards.forEach(c => inCycle.add(c.id));
+    });
   }
 
   // Sort cycles: nonfoil first, then foil, then special
@@ -724,7 +735,6 @@ function openAddModal() {
   $('sld-drop-filter').classList.add('hidden');
   $('sld-drop-filter-input').value = '';
   $('confirm-panel').classList.add('hidden');
-  $('confirm-drop-field').classList.add('hidden');
   $('save-card-btn').textContent = 'Save';
   selectedBrowseCards.clear();
   // Reset toggles to defaults
@@ -809,20 +819,17 @@ function renderSldBrowseGrid(cards) {
 
   const drops = groupSldByDrop(cards);
 
-  // Treat each drop as a cycle if it has 2+ land types
+  // Treat each drop as a cycle if it has 2+ land types (zip into WUBRG rows)
   for (const drop of drops) {
-    const types = new Set(drop.cards.map(c => Scryfall.deriveLandType(c)).filter(t => LAND_TYPES.includes(t)));
-    if (types.size >= 2) {
-      // Group by finish within the drop
-      const byFinish = {};
-      for (const card of drop.cards) {
-        const f = Scryfall.deriveFinish(card);
-        if (!byFinish[f]) byFinish[f] = [];
-        byFinish[f].push(card);
-      }
-      for (const [f, group] of Object.entries(byFinish)) {
-        const gt = new Set(group.map(c => Scryfall.deriveLandType(c)).filter(t => LAND_TYPES.includes(t)));
-        if (gt.size >= 2) browseCycles.push({ finish: f, cards: group });
+    const byFinish = {};
+    for (const card of drop.cards) {
+      const f = Scryfall.deriveFinish(card);
+      if (!byFinish[f]) byFinish[f] = [];
+      byFinish[f].push(card);
+    }
+    for (const [f, group] of Object.entries(byFinish)) {
+      for (const row of zipCycleRows(group, Scryfall.deriveLandType)) {
+        browseCycles.push({ finish: f, cards: row });
       }
     }
   }
@@ -847,45 +854,54 @@ function renderSldBrowseGrid(cards) {
 
     for (const finish of sortedFinishes) {
       const group = byFinish[finish];
+      group.sort((a, b) =>
+        LAND_TYPES.indexOf(Scryfall.deriveLandType(a)) - LAND_TYPES.indexOf(Scryfall.deriveLandType(b))
+        || parseInt(a.collector_number) - parseInt(b.collector_number)
+      );
+
       if (sortedFinishes.length > 1) {
         const cycleLabel = el('div', 'browse-cycle-label', `${finishAbbrev(finish)}\u2005${finish}`);
         section.appendChild(cycleLabel);
       }
-      const grid = el('div', 'browse-grid');
 
-      for (const card of group) {
-        const landType = Scryfall.deriveLandType(card);
-        const imgUrl = Scryfall.imageUrl(card.id);
-        const isFoil = finish !== 'nonfoil';
+      const rows = zipCycleRows(group, Scryfall.deriveLandType);
+      // Fall back to a single row with all cards if no cycle detected (e.g. single land type)
+      const renderRows = rows.length > 0 ? rows : [group];
 
-        const tile = el('div', 'browse-tile');
-        if (isFoil) tile.setAttribute('data-foil', 'true');
-        tile.setAttribute('data-finish', finish);
+      for (const rowCards of renderRows) {
+        const grid = el('div', 'browse-grid');
+        for (const card of rowCards) {
+          const landType = Scryfall.deriveLandType(card);
+          const imgUrl = Scryfall.imageUrl(card.id);
+          const isFoil = finish !== 'nonfoil';
 
-        const dupe = Sheets.findDuplicate(State.cards, card.set, card.collector_number, finish);
+          const tile = el('div', 'browse-tile');
+          if (isFoil) tile.setAttribute('data-foil', 'true');
+          tile.setAttribute('data-finish', finish);
 
-        const finishIcon = finishAbbrev(finish);
+          const dupe = Sheets.findDuplicate(State.cards, card.set, card.collector_number, finish);
+          const finishIcon = finishAbbrev(finish);
 
-        tile.innerHTML = `
-          <div class="browse-art-wrap">
-            <img src="${imgUrl}" alt="${landType}" loading="lazy"
-                 onerror="this.style.background='#182420'"/>
-            ${dupe ? `<div class="dupe-badge ${dupe.status}">${dupe.status === 'have' ? 'Owned' : 'Want'}</div>` : ''}
-            ${isFoil ? '<div class="foil-shimmer"></div>' : ''}
-          </div>
-          <div class="browse-info-compact">
-            <span class="mono">#${card.collector_number}</span>
-            <span class="browse-icons">
-              <span class="finish-icon" data-finish="${finish}" title="${finish}">${finishIcon}</span>
-              ${landIcon(landType)}
-            </span>
-          </div>`;
+          tile.innerHTML = `
+            <div class="browse-art-wrap">
+              <img src="${imgUrl}" alt="${landType}" loading="lazy"
+                   onerror="this.style.background='#182420'"/>
+              ${dupe ? `<div class="dupe-badge ${dupe.status}">${dupe.status === 'have' ? 'Owned' : 'Want'}</div>` : ''}
+              ${isFoil ? '<div class="foil-shimmer"></div>' : ''}
+            </div>
+            <div class="browse-info-compact">
+              <span class="mono">#${card.collector_number}</span>
+              <span class="browse-icons">
+                <span class="finish-icon" data-finish="${finish}" title="${finish}">${finishIcon}</span>
+                ${landIcon(landType)}
+              </span>
+            </div>`;
 
-        tile.addEventListener('click', () => selectBrowseCard(card, tile, drop.name));
-        grid.appendChild(tile);
+          tile.addEventListener('click', () => selectBrowseCard(card, tile, drop.name));
+          grid.appendChild(tile);
+        }
+        section.appendChild(grid);
       }
-
-      section.appendChild(grid);
     }
 
     resultsEl.appendChild(section);
@@ -927,30 +943,15 @@ function renderBrowseGrid(cards) {
     const soloCards = [];
 
     for (const [finish, group] of Object.entries(finishGroups)) {
-      const types = new Set(group.map(c => Scryfall.deriveLandType(c)).filter(t => LAND_TYPES.includes(t)));
-      if (types.size >= 2) {
-        // Split into per-type buckets, then zip into WUBRG rows
-        group.sort((a, b) =>
-          LAND_TYPES.indexOf(Scryfall.deriveLandType(a)) - LAND_TYPES.indexOf(Scryfall.deriveLandType(b))
-          || parseInt(a.collector_number) - parseInt(b.collector_number)
-        );
-        const byType = {};
-        for (const card of group) {
-          const t = Scryfall.deriveLandType(card);
-          if (!LAND_TYPES.includes(t)) continue;
-          if (!byType[t]) byType[t] = [];
-          byType[t].push(card);
-        }
-        const maxPerType = Math.max(...Object.values(byType).map(a => a.length));
-        for (let i = 0; i < maxPerType; i++) {
-          const rowCards = [];
-          for (const t of LAND_TYPES) {
-            if (byType[t]?.[i]) rowCards.push(byType[t][i]);
-          }
-          if (rowCards.length >= 2) {
-            cycles.push({ finish, cards: rowCards });
-            browseCycles.push({ finish, cards: rowCards });
-          }
+      group.sort((a, b) =>
+        LAND_TYPES.indexOf(Scryfall.deriveLandType(a)) - LAND_TYPES.indexOf(Scryfall.deriveLandType(b))
+        || parseInt(a.collector_number) - parseInt(b.collector_number)
+      );
+      const rows = zipCycleRows(group, Scryfall.deriveLandType);
+      if (rows.length > 0) {
+        for (const rowCards of rows) {
+          cycles.push({ finish, cards: rowCards });
+          browseCycles.push({ finish, cards: rowCards });
         }
       } else {
         soloCards.push(...group);
@@ -1091,12 +1092,6 @@ function updateSelectionPanel() {
   $('confirm-type').textContent = count === 1 ? landType : '—';
   $('confirm-finish').textContent = count === 1 ? finish : '—';
 
-  // Show/populate drop name field for SLD cards
-  const isSld = card.set === 'sld';
-  $('confirm-drop-field').classList.toggle('hidden', !isSld);
-  if (isSld) {
-    $('confirm-drop-name').value = last.clusterLabel ?? sldDropName(card.collector_number) ?? '';
-  }
 }
 
 function selectAllCards(cards, container, clusterLabel) {
@@ -1142,8 +1137,6 @@ async function saveCard() {
 
   const status   = $('status-toggle-have').classList.contains('active') ? 'have' : 'want';
   const favourite = $('fav-toggle').classList.contains('active');
-  const drop_name_input = $('confirm-drop-name')?.value.trim() || '';
-
   // Duplicate check
   const entries = [...selectedBrowseCards.values()];
   const dupes = entries.filter(({ card }) => {
@@ -1165,12 +1158,9 @@ async function saveCard() {
     // Enrich all cards (fetchSet is cached, so only one Scryfall call per set)
     $btn.textContent = 'Enriching…';
     const enriched = [];
-    for (const { card, clusterLabel } of entries) {
-      const drop_name = card.set === 'sld'
-        ? (drop_name_input || clusterLabel || sldDropName(card.collector_number) || '')
-        : '';
+    for (const { card } of entries) {
       const e = await Scryfall.enrichCard(card);
-      enriched.push({ ...e, status, favourite, drop_name });
+      enriched.push({ ...e, status, favourite });
     }
 
     // Auto-fill missing cycle cards as "want"
@@ -1188,11 +1178,8 @@ async function saveCard() {
           });
           if (newMissing.length > 0) {
             for (const card of newMissing) {
-              const drop_name = card.set === 'sld'
-                ? (drop_name_input || sldDropName(card.collector_number) || '')
-                : '';
               const e = await Scryfall.enrichCard(card);
-              enriched.push({ ...e, status: 'want', favourite, drop_name });
+              enriched.push({ ...e, status: 'want', favourite });
             }
           }
         }
@@ -1245,13 +1232,6 @@ function openEditModal(cardId) {
   $('edit-type').textContent = card.land_type;
   $('edit-finish').textContent = card.finish;
 
-  // Drop name (SLD only)
-  const isSld = card.set_code === 'sld';
-  $('edit-drop-field').classList.toggle('hidden', !isSld);
-  if (isSld) {
-    $('edit-drop-name').value = card.drop_name || '';
-  }
-
   // Status
   $('edit-status-have').classList.toggle('active', card.status === 'have');
   $('edit-status-want').classList.toggle('active', card.status === 'want');
@@ -1271,11 +1251,6 @@ async function saveEdit() {
   const status    = $('edit-status-have').classList.contains('active') ? 'have' : 'want';
   const favourite = $('edit-fav-toggle').classList.contains('active');
   const updates = { status, favourite };
-
-  // Include drop_name if SLD
-  if (card.set_code === 'sld') {
-    updates.drop_name = $('edit-drop-name')?.value.trim() || '';
-  }
 
   const $btn = $('save-edit-btn');
   $btn.disabled = true;
