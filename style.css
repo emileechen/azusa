@@ -424,7 +424,7 @@ img { display: block; }
   margin: 10px 0;
 }
 .cycle-grid {
-  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(120px, 170px));
   max-width: calc(6 * 180px);
 }
 
