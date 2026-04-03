@@ -401,7 +401,7 @@ img { display: block; }
 }
 
 .cycle-tag {
-  font-size: 0.75rem;
+  font-size: 0.85rem;
   color: var(--text-dim);
 }
 
@@ -610,8 +610,8 @@ img { display: block; }
 .status-badge.want { background: var(--want-bg); color: var(--want); }
 
 .finish-badge {
-  font-size: 0.7rem;
-  padding: 2px 8px;
+  font-size: 0.85rem;
+  padding: 3px 10px;
   border-radius: 999px;
   background: rgba(166,139,199,0.12);
   color: var(--foil);
@@ -926,7 +926,7 @@ img { display: block; }
 }
 
 .browse-cycle-label {
-  font-size: 0.7rem;
+  font-size: 0.85rem;
   color: var(--text-muted);
   margin: 12px 0 6px;
   padding-left: 2px;
@@ -1042,7 +1042,7 @@ img { display: block; }
   justify-content: center;
   width: 18px;
   height: 18px;
-  font-size: 0.85rem;
+  font-size: 14px;
   line-height: 1;
   cursor: default;
 }

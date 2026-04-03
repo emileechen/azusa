@@ -75,9 +75,9 @@ function landIcon(landType) {
 }
 
 function finishAbbrev(finish) {
-  if (finish === 'nonfoil') return '';
-  if (finish === 'foil') return '◆';
-  return '★';
+  if (finish === 'nonfoil') return '⚪';
+  if (finish === 'foil') return '✨';
+  return '💎';
 }
 
 // ---------------------------------------------------------------------------
@@ -417,7 +417,7 @@ function renderGrid(cards) {
       cycleEl.innerHTML = `
         <div class="cycle-header">
           <span class="cycle-label">
-            <span class="finish-badge" data-finish="${finish}">${finish}</span>
+            <span class="finish-badge" data-finish="${finish}">${finishAbbrev(finish)}\u2005${finish}</span>
             <span class="cycle-tag">${allCards.length} cards</span>
           </span>
           <button class="fav-btn cycle-fav-btn ${state}"
@@ -482,7 +482,7 @@ function makeCardTile(card) {
         <span class="card-set-code" title="${card.set_name}">${card.set_code.toUpperCase()}</span>
         <span class="card-num">#${card.collector_num}</span>
         <span class="card-icons">
-          ${finishIcon ? `<span class="finish-icon" data-finish="${card.finish}" title="${card.finish}">${finishIcon}</span>` : ''}
+          <span class="finish-icon" data-finish="${card.finish}" title="${card.finish}">${finishIcon}</span>
           ${landIcon(card.land_type)}
         </span>
       </div>
@@ -835,7 +835,7 @@ function renderSldBrowseGrid(cards) {
     for (const finish of sortedFinishes) {
       const group = byFinish[finish];
       if (sortedFinishes.length > 1) {
-        const cycleLabel = el('div', 'browse-cycle-label', finish);
+        const cycleLabel = el('div', 'browse-cycle-label', `${finishAbbrev(finish)}\u2005${finish}`);
         section.appendChild(cycleLabel);
       }
       const grid = el('div', 'browse-grid');
@@ -863,7 +863,7 @@ function renderSldBrowseGrid(cards) {
           <div class="browse-info-compact">
             <span class="mono">#${card.collector_number}</span>
             <span class="browse-icons">
-              ${finishIcon ? `<span class="finish-icon" data-finish="${finish}" title="${finish}">${finishIcon}</span>` : ''}
+              <span class="finish-icon" data-finish="${finish}" title="${finish}">${finishIcon}</span>
               ${landIcon(landType)}
             </span>
           </div>`;
@@ -959,7 +959,7 @@ function renderBrowseGrid(cards) {
       const allCards = finishCycles.flatMap(c => c.cards);
       const cycleWrap = el('div', 'browse-cycle-wrap');
       const cycleHeader = el('div', 'browse-cycle-header');
-      cycleHeader.innerHTML = `<span class="browse-cycle-label">${finish}</span>`;
+      cycleHeader.innerHTML = `<span class="browse-cycle-label">${finishAbbrev(finish)}\u2005${finish}</span>`;
       cycleHeader.appendChild(makeSelectAllBtn(allCards, cycleWrap));
       cycleWrap.appendChild(cycleHeader);
 
@@ -1015,7 +1015,7 @@ function makeBrowseTile(card) {
     <div class="browse-info-compact">
       <span class="mono">#${card.collector_number}</span>
       <span class="browse-icons">
-        ${finishIcon ? `<span class="finish-icon" data-finish="${finish}" title="${finish}">${finishIcon}</span>` : ''}
+        <span class="finish-icon" data-finish="${finish}" title="${finish}">${finishIcon}</span>
         ${landIcon(landType)}
       </span>
     </div>`;
