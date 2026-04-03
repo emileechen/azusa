@@ -8,7 +8,7 @@ const Sheets = (() => {
 
   const SHEET_NAME = 'lands';
   const COLS = ['id','set_code','set_name','parent_set_code','collector_num',
-                 'land_type','scryfall_id','finish','status','favourite','drop_name','price'];
+                 'land_type','scryfall_id','finish','status','favourite','price'];
 
   // Set by init()
   let sheetId   = null;
@@ -60,30 +60,21 @@ const Sheets = (() => {
   // If Row 1 is empty, writes the header.
   // ---------------------------------------------------------------------------
   async function ensureHeaders() {
-    const data = await apiFetch(rangeUrl(`${SHEET_NAME}!A1:L1`));
+    const data = await apiFetch(rangeUrl(`${SHEET_NAME}!A1:K1`));
     const existing = data.values?.[0] ?? [];
     if (existing.length === 0) {
       // Brand new sheet — write full header
       await apiFetch(
-        rangeUrl(`${SHEET_NAME}!A1:L1`, '?valueInputOption=RAW'),
+        rangeUrl(`${SHEET_NAME}!A1:K1`, '?valueInputOption=RAW'),
         {
           method: 'PUT',
           body: JSON.stringify({ values: [COLS] }),
         }
       );
-    } else if (existing.length === 10 && !existing.includes('drop_name')) {
-      // Existing sheet missing drop_name and price columns
-      await apiFetch(
-        rangeUrl(`${SHEET_NAME}!K1:L1`, '?valueInputOption=RAW'),
-        {
-          method: 'PUT',
-          body: JSON.stringify({ values: [['drop_name', 'price']] }),
-        }
-      );
-    } else if (existing.length === 11 && !existing.includes('price')) {
+    } else if (existing.length === 10 && !existing.includes('price')) {
       // Existing sheet missing the price column
       await apiFetch(
-        rangeUrl(`${SHEET_NAME}!L1`, '?valueInputOption=RAW'),
+        rangeUrl(`${SHEET_NAME}!K1`, '?valueInputOption=RAW'),
         {
           method: 'PUT',
           body: JSON.stringify({ values: [['price']] }),
@@ -97,7 +88,7 @@ const Sheets = (() => {
   // ---------------------------------------------------------------------------
   async function readAll() {
     await ensureHeaders();
-    const data = await apiFetch(rangeUrl(`${SHEET_NAME}!A:L`));
+    const data = await apiFetch(rangeUrl(`${SHEET_NAME}!A:K`));
     const rows = data.values ?? [];
     if (rows.length <= 1) return []; // header only
 
@@ -128,7 +119,7 @@ const Sheets = (() => {
     });
 
     await apiFetch(
-      `${sheetsBase()}/values/${encodeURIComponent(`${SHEET_NAME}!A:L`)}:append?valueInputOption=RAW&insertDataOption=INSERT_ROWS`,
+      `${sheetsBase()}/values/${encodeURIComponent(`${SHEET_NAME}!A:K`)}:append?valueInputOption=RAW&insertDataOption=INSERT_ROWS`,
       {
         method: 'POST',
         body: JSON.stringify({ values: [row] }),
@@ -155,7 +146,7 @@ const Sheets = (() => {
     });
 
     await apiFetch(
-      `${sheetsBase()}/values/${encodeURIComponent(`${SHEET_NAME}!A:L`)}:append?valueInputOption=RAW&insertDataOption=INSERT_ROWS`,
+      `${sheetsBase()}/values/${encodeURIComponent(`${SHEET_NAME}!A:K`)}:append?valueInputOption=RAW&insertDataOption=INSERT_ROWS`,
       {
         method: 'POST',
         body: JSON.stringify({ values: rows }),
@@ -171,7 +162,7 @@ const Sheets = (() => {
   // ---------------------------------------------------------------------------
   async function updateCard(rowIndex, updates) {
     // First read the current row
-    const data = await apiFetch(rangeUrl(`${SHEET_NAME}!A${rowIndex}:L${rowIndex}`));
+    const data = await apiFetch(rangeUrl(`${SHEET_NAME}!A${rowIndex}:K${rowIndex}`));
     const current = data.values?.[0] ?? [];
 
     const row = COLS.map((col, ci) => {
@@ -184,7 +175,7 @@ const Sheets = (() => {
     });
 
     await apiFetch(
-      rangeUrl(`${SHEET_NAME}!A${rowIndex}:L${rowIndex}`, '?valueInputOption=RAW'),
+      rangeUrl(`${SHEET_NAME}!A${rowIndex}:K${rowIndex}`, '?valueInputOption=RAW'),
       {
         method: 'PUT',
         body: JSON.stringify({ values: [row] }),
@@ -281,7 +272,7 @@ const Sheets = (() => {
     const data = { valueInputOption: 'RAW', data: [] };
     for (const { rowIndex, price } of entries) {
       data.data.push({
-        range:  `${SHEET_NAME}!L${rowIndex}`,
+        range:  `${SHEET_NAME}!K${rowIndex}`,
         values: [[price ?? '']],
       });
     }
