@@ -1216,6 +1216,62 @@ img { display: block; }
 /* ============================================================
    RESPONSIVE
    ============================================================ */
+/* ── READ-ONLY MODE ── */
+.read-only #add-card-btn,
+.read-only #refresh-prices-btn,
+.read-only #sign-out-btn,
+.read-only .card-overlay,
+.read-only .table-actions { display: none; }
+.read-only .fav-btn,
+.read-only .cycle-fav-btn { pointer-events: none; cursor: default; }
+
+/* ── DEMO BANNER ── */
+.demo-banner {
+  background: var(--accent-dim);
+  border-bottom: 1px solid var(--border);
+  color: var(--text-muted);
+  text-align: center;
+  padding: 8px 16px;
+  font-size: 0.85rem;
+}
+.demo-banner a {
+  color: var(--accent);
+  margin-left: 8px;
+  text-decoration: underline;
+}
+
+/* ── AUTH DIVIDER + DEMO BUTTON ── */
+.auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 20px 0;
+  color: var(--text-dim);
+  font-size: 0.8rem;
+}
+.auth-divider::before,
+.auth-divider::after {
+  content: '';
+  flex: 1;
+  border-top: 1px solid var(--border);
+}
+.btn-demo {
+  width: 100%;
+  background: transparent;
+  border: 1px solid var(--border-2);
+  color: var(--text-muted);
+  font-weight: 500;
+  font-size: 0.9rem;
+  padding: 11px 20px;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+.btn-demo:hover {
+  border-color: var(--accent);
+  color: var(--text);
+}
+
 @media (max-width: 640px) {
   .modal-body { flex-direction: column; }
   .confirm-panel { width: 100%; border-right: none; border-top: 1px solid var(--border); }

@@ -326,6 +326,7 @@ const Sheets = (() => {
   }
 
   // ---------------------------------------------------------------------------
+  // ---------------------------------------------------------------------------
   // Batch-update prices for multiple cards in a single API call.
   // `entries` is an array of { rowIndex, price }.
   // ---------------------------------------------------------------------------
@@ -349,11 +350,86 @@ const Sheets = (() => {
   }
 
   // ---------------------------------------------------------------------------
+  // CSV parsing for public (unauthenticated) sheet access
+  // ---------------------------------------------------------------------------
+  function parseCSV(csvText) {
+    const lines = [];
+    let current = '';
+    let inQuotes = false;
+    // Split into rows handling quoted newlines
+    for (let i = 0; i < csvText.length; i++) {
+      const ch = csvText[i];
+      if (ch === '"') {
+        if (inQuotes && csvText[i + 1] === '"') {
+          current += '"'; i++; // escaped quote
+        } else {
+          inQuotes = !inQuotes;
+        }
+      } else if (ch === '\n' && !inQuotes) {
+        lines.push(current);
+        current = '';
+      } else if (ch === '\r' && !inQuotes) {
+        // skip CR
+      } else {
+        current += ch;
+      }
+    }
+    if (current) lines.push(current);
+
+    if (lines.length <= 1) return [];
+
+    // Parse each line into fields
+    function splitRow(line) {
+      const fields = [];
+      let field = '';
+      let q = false;
+      for (let i = 0; i < line.length; i++) {
+        const ch = line[i];
+        if (ch === '"') {
+          if (q && line[i + 1] === '"') { field += '"'; i++; }
+          else q = !q;
+        } else if (ch === ',' && !q) {
+          fields.push(field); field = '';
+        } else {
+          field += ch;
+        }
+      }
+      fields.push(field);
+      return fields;
+    }
+
+    const header = splitRow(lines[0]);
+    return lines.slice(1).filter(l => l.trim()).map((line, i) => {
+      const vals = splitRow(line);
+      const obj = {};
+      COLS.forEach((col, ci) => {
+        const hi = header.indexOf(col);
+        obj[col] = hi >= 0 ? (vals[hi] ?? '') : '';
+      });
+      obj.favourite = obj.favourite === 'TRUE';
+      obj._rowIndex = i + 2;
+      return obj;
+    });
+  }
+
+  async function readPublicCSV(sheetId) {
+    const url = `https://docs.google.com/spreadsheets/d/${sheetId}/gviz/tq?tqx=out:csv&sheet=${SHEET_NAME}`;
+    const res = await fetch(url);
+    if (!res.ok) {
+      throw new Error('This sheet is not publicly shared or does not exist.');
+    }
+    const text = await res.text();
+    return parseCSV(text);
+  }
+  }
+
+  // ---------------------------------------------------------------------------
   // Public API
   // ---------------------------------------------------------------------------
   return {
     init,
     readAll,
+    readPublicCSV,
     appendCard,
     appendCards,
     updateCard,

@@ -7,9 +7,10 @@
 // CONFIG — fill in your credentials
 // ---------------------------------------------------------------------------
 const CONFIG = {
-  CLIENT_ID: '951154980013-3eg1bkbhr2u1ph3c7qtafc5b6q5rmuhr.apps.googleusercontent.com',
-  SHEET_ID:  '1Gmw4Uvz41P8CpIsYIYLUCdxJqO2UgLmZ2R5QzVi98MY',
-  SCOPES:    'https://www.googleapis.com/auth/spreadsheets',
+  CLIENT_ID:      '951154980013-3eg1bkbhr2u1ph3c7qtafc5b6q5rmuhr.apps.googleusercontent.com',
+  SHEET_ID:       '1Gmw4Uvz41P8CpIsYIYLUCdxJqO2UgLmZ2R5QzVi98MY',
+  DEMO_SHEET_ID:  '1o1q5XrGJ6aPAMbrJ1iBGGHmuOBT0NP1GqGM44IT98ko',
+  SCOPES:         'https://www.googleapis.com/auth/spreadsheets',
 };
 
 // ---------------------------------------------------------------------------
@@ -29,6 +30,7 @@ const State = {
   tokenClient:  null,
   accessToken:  null,
   parentNames:  {},  // parent_set_code → display name
+  readOnly:     false,
 };
 
 // ---------------------------------------------------------------------------
@@ -201,6 +203,44 @@ async function resolveParentNames() {
     const s = await Scryfall.fetchSet(code);
     if (s) State.parentNames[code] = s.name;
   }));
+}
+
+// ---------------------------------------------------------------------------
+// DEMO MODE
+// ---------------------------------------------------------------------------
+async function startDemo() {
+  State.readOnly = true;
+  showApp();
+  applyReadOnlyUI();
+  await loadPublicCollection(CONFIG.DEMO_SHEET_ID);
+}
+
+async function loadPublicCollection(sheetId) {
+  showLoading(true);
+  try {
+    State.cards = await Sheets.readPublicCSV(sheetId);
+    await resolveParentNames();
+    renderFilters();
+    renderCollection();
+    renderStats();
+  } catch (e) {
+    showError('Failed to load demo: ' + e.message);
+  } finally {
+    showLoading(false);
+  }
+}
+
+function applyReadOnlyUI() {
+  $('app-screen').classList.add('read-only');
+  $('demo-banner')?.classList.remove('hidden');
+}
+
+function exitDemo() {
+  State.readOnly = false;
+  State.cards = [];
+  $('app-screen').classList.remove('read-only');
+  $('demo-banner')?.classList.add('hidden');
+  showAuth();
 }
 
 // ---------------------------------------------------------------------------
@@ -489,15 +529,18 @@ function makeCardTile(card) {
   const imgUrl = Scryfall.imageUrl(card.scryfall_id);
   const finishIcon = finishAbbrev(card.finish);
 
-  tile.innerHTML = `
-    <div class="card-art-wrap">
-      <img class="card-art" src="${imgUrl}" alt="${card.land_type}" loading="lazy"
-           onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 488 680%22><rect width=%22488%22 height=%22680%22 fill=%22%23182420%22/><text x=%22244%22 y=%22340%22 text-anchor=%22middle%22 fill=%22%238a9b8e%22 font-size=%2248%22>${card.land_type[0]}</text></svg>'"/>
+  const overlayHtml = State.readOnly ? '' : `
       <div class="card-overlay">
         <a class="card-action-btn scryfall-btn" href="https://scryfall.com/card/${card.set_code}/${card.collector_num}" target="_blank" rel="noopener" title="View on Scryfall"><img src="https://scryfall.com/icon.png" class="scryfall-icon" alt="Scryfall"/></a>
         <button class="card-action-btn status-btn" title="Switch to ${card.status === 'have' ? 'want' : 'have'}" data-id="${card.id}">${card.status === 'have' ? '🛒' : '📥'}</button>
         <button class="card-action-btn delete-btn" title="Delete" data-id="${card.id}">❌</button>
-      </div>
+      </div>`;
+
+  tile.innerHTML = `
+    <div class="card-art-wrap">
+      <img class="card-art" src="${imgUrl}" alt="${card.land_type}" loading="lazy"
+           onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 488 680%22><rect width=%22488%22 height=%22680%22 fill=%22%23182420%22/><text x=%22244%22 y=%22340%22 text-anchor=%22middle%22 fill=%22%238a9b8e%22 font-size=%2248%22>${card.land_type[0]}</text></svg>'"/>
+      ${overlayHtml}
       ${isFoil ? '<div class="foil-shimmer"></div>' : ''}
     </div>
     <div class="card-info">
@@ -516,17 +559,19 @@ function makeCardTile(card) {
       ${card.favourite ? '★' : '☆'}
     </button>`;
 
-  // Events
-  tile.querySelector('.scryfall-btn').addEventListener('click', e => e.stopPropagation());
-  tile.querySelector('.status-btn').addEventListener('click', e => {
-    e.stopPropagation(); toggleCardStatus(card.id);
-  });
-  tile.querySelector('.delete-btn').addEventListener('click', e => {
-    e.stopPropagation(); confirmDelete(card.id);
-  });
-  tile.querySelector('.card-fav-btn').addEventListener('click', e => {
-    e.stopPropagation(); toggleCardFav(card.id);
-  });
+  // Events (skip write actions in read-only mode)
+  if (!State.readOnly) {
+    tile.querySelector('.scryfall-btn').addEventListener('click', e => e.stopPropagation());
+    tile.querySelector('.status-btn').addEventListener('click', e => {
+      e.stopPropagation(); toggleCardStatus(card.id);
+    });
+    tile.querySelector('.delete-btn').addEventListener('click', e => {
+      e.stopPropagation(); confirmDelete(card.id);
+    });
+    tile.querySelector('.card-fav-btn').addEventListener('click', e => {
+      e.stopPropagation(); toggleCardFav(card.id);
+    });
+  }
 
   return tile;
 }
@@ -555,7 +600,7 @@ function renderTable(cards) {
         <th data-sort="status">Status</th>
         <th data-sort="price">Price</th>
         <th data-sort="favourite">★</th>
-        <th>Actions</th>
+        ${State.readOnly ? '' : '<th>Actions</th>'}
       </tr>
     </thead>
     <tbody></tbody>`;
@@ -567,7 +612,7 @@ function renderTable(cards) {
   for (const release of releases) {
     // Release header row
     const releaseRow = el('tr', 'table-release-row');
-    releaseRow.innerHTML = `<td colspan="9">${release.name}</td>`;
+    releaseRow.innerHTML = `<td colspan="${State.readOnly ? 8 : 9}">${release.name}</td>`;
     tbody.appendChild(releaseRow);
 
     // Card rows
@@ -591,15 +636,17 @@ function renderTable(cards) {
             ${card.favourite ? '★' : '☆'}
           </button>
         </td>
-        <td class="table-actions">
+        ${State.readOnly ? '' : `<td class="table-actions">
           <a class="table-action-btn scryfall-btn" href="https://scryfall.com/card/${card.set_code}/${card.collector_num}" target="_blank" rel="noopener" title="View on Scryfall"><img src="https://scryfall.com/icon.png" class="scryfall-icon" alt="Scryfall"/></a>
           <button class="table-action-btn status-btn" data-id="${card.id}" title="Switch to ${card.status === 'have' ? 'want' : 'have'}">${card.status === 'have' ? '🛒' : '📥'}</button>
           <button class="table-action-btn delete-btn" data-id="${card.id}">✕</button>
-        </td>`;
+        </td>`}`;
 
-      row.querySelector('.card-fav-btn').addEventListener('click', () => toggleCardFav(card.id));
-      row.querySelector('.status-btn').addEventListener('click', () => toggleCardStatus(card.id));
-      row.querySelector('.delete-btn').addEventListener('click', () => confirmDelete(card.id));
+      if (!State.readOnly) {
+        row.querySelector('.card-fav-btn').addEventListener('click', () => toggleCardFav(card.id));
+        row.querySelector('.status-btn').addEventListener('click', () => toggleCardStatus(card.id));
+        row.querySelector('.delete-btn').addEventListener('click', () => confirmDelete(card.id));
+      }
       tbody.appendChild(row);
     }
   }
@@ -1334,6 +1381,13 @@ document.addEventListener('DOMContentLoaded', () => {
   $('sign-in-btn')?.addEventListener('click', signIn);
   $('sign-out-btn')?.addEventListener('click', signOut);
 
+  // Demo
+  $('demo-btn')?.addEventListener('click', startDemo);
+  $('demo-sign-in-link')?.addEventListener('click', e => {
+    e.preventDefault();
+    exitDemo();
+  });
+
   // View toggle
   $('btn-grid-view')?.addEventListener('click', () => setView('grid'));
   $('btn-table-view')?.addEventListener('click', () => setView('table'));
@@ -1432,6 +1486,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // Called by Google Identity Services script onload
 function initGoogleAuth() {
+  if (State.readOnly) return;
   initAuth();
   // Prefer localStorage override, fall back to hardcoded CONFIG.SHEET_ID
   const saved = localStorage.getItem('azusa_sheet_id') || CONFIG.SHEET_ID;
