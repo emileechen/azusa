@@ -463,8 +463,8 @@ function renderGrid(cards) {
       cycleEl.innerHTML = `
         <div class="cycle-header">
           <span class="cycle-label">
-            <span class="finish-badge" data-finish="${finish}">${finishAbbrev(finish)}\u2005${finish}</span>
-            <span class="cycle-tag">${allCards.length} cards</span>${(() => {
+            <span class="finish-badge" data-finish="${finish}">${finishAbbrev(finish)}<span class="finish-text">\u2005${finish}</span></span>
+            <span class="cycle-tag">${allCards.length}<span class="cards-text"> cards</span></span>${(() => {
               const t = allCards.reduce((s, c) => s + (parseFloat(c.price) || 0), 0);
               if (t === 0) return '';
               const o = allCards.filter(c => c.status === 'have').reduce((s, c) => s + (parseFloat(c.price) || 0), 0);

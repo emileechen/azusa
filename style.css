@@ -1307,4 +1307,8 @@ img { display: block; }
 
   /* Stats strip: tighter */
   .stats-strip { gap: 8px; padding: 6px 12px; font-size: 0.72rem; }
+
+  /* Cycle headers: compact */
+  .finish-text { display: none; }
+  .cards-text { display: none; }
 }
