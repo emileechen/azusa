@@ -1499,8 +1499,5 @@ function initGoogleAuth() {
     return;
   }
 
-  // No valid cached token — try silent request
-  if (saved) {
-    State.tokenClient.requestAccessToken({ prompt: '' });
-  }
+  // No valid cached token — wait for user to click sign in
 }
