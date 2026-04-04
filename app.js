@@ -443,7 +443,7 @@ function makeCardTile(card) {
            onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 488 680%22><rect width=%22488%22 height=%22680%22 fill=%22%23182420%22/><text x=%22244%22 y=%22340%22 text-anchor=%22middle%22 fill=%22%238a9b8e%22 font-size=%2248%22>${card.land_type[0]}</text></svg>'"/>
       <div class="card-overlay">
         <a class="card-action-btn scryfall-btn" href="https://scryfall.com/card/${card.set_code}/${card.collector_num}" target="_blank" rel="noopener" title="View on Scryfall">↗</a>
-        <a class="card-action-btn tcg-btn" href="https://www.tcgplayer.com/search/magic/product?q=${encodeURIComponent(card.land_type + ' ' + card.collector_num + ' ' + card.set_name)}&view=grid&Condition=Near+Mint" target="_blank" rel="noopener" title="Search on TCGplayer">$</a>
+        <button class="card-action-btn tcg-btn" title="View on TCGplayer" data-scryfall-id="${card.scryfall_id}">$</button>
         <button class="card-action-btn status-btn" title="Switch to ${card.status === 'have' ? 'want' : 'have'}" data-id="${card.id}">⇄</button>
         <button class="card-action-btn delete-btn" title="Delete" data-id="${card.id}">✕</button>
       </div>
@@ -466,7 +466,9 @@ function makeCardTile(card) {
 
   // Events
   tile.querySelector('.scryfall-btn').addEventListener('click', e => e.stopPropagation());
-  tile.querySelector('.tcg-btn').addEventListener('click', e => e.stopPropagation());
+  tile.querySelector('.tcg-btn').addEventListener('click', e => {
+    e.stopPropagation(); openTcgplayer(card.scryfall_id, e.currentTarget);
+  });
   tile.querySelector('.status-btn').addEventListener('click', e => {
     e.stopPropagation(); toggleCardStatus(card.id);
   });
@@ -540,12 +542,13 @@ function renderTable(cards) {
         </td>
         <td class="table-actions">
           <a class="table-action-btn scryfall-btn" href="https://scryfall.com/card/${card.set_code}/${card.collector_num}" target="_blank" rel="noopener" title="View on Scryfall">↗</a>
-          <a class="table-action-btn tcg-btn" href="https://www.tcgplayer.com/search/magic/product?q=${encodeURIComponent(card.land_type + ' ' + card.collector_num + ' ' + card.set_name)}&view=grid&Condition=Near+Mint" target="_blank" rel="noopener" title="Search on TCGplayer">$</a>
+          <button class="table-action-btn tcg-btn" title="View on TCGplayer" data-scryfall-id="${card.scryfall_id}">$</button>
           <button class="table-action-btn status-btn" data-id="${card.id}" title="Switch to ${card.status === 'have' ? 'want' : 'have'}">⇄</button>
           <button class="table-action-btn delete-btn" data-id="${card.id}">✕</button>
         </td>`;
 
       row.querySelector('.card-fav-btn').addEventListener('click', () => toggleCardFav(card.id));
+      row.querySelector('.tcg-btn').addEventListener('click', () => openTcgplayer(card.scryfall_id));
       row.querySelector('.status-btn').addEventListener('click', () => toggleCardStatus(card.id));
       row.querySelector('.delete-btn').addEventListener('click', () => confirmDelete(card.id));
       tbody.appendChild(row);
@@ -553,6 +556,25 @@ function renderTable(cards) {
   }
 
   container.appendChild(table);
+}
+
+// ---------------------------------------------------------------------------
+// OPEN TCGPLAYER — fetch direct link from Scryfall and open in new tab
+// ---------------------------------------------------------------------------
+async function openTcgplayer(scryfallId, btn) {
+  if (btn) btn.classList.add('loading');
+  try {
+    const url = await Scryfall.tcgplayerUrl(scryfallId);
+    if (url) {
+      window.open(url, '_blank', 'noopener');
+    } else {
+      showError('No TCGplayer link available for this card.');
+    }
+  } catch {
+    showError('Failed to fetch TCGplayer link.');
+  } finally {
+    if (btn) btn.classList.remove('loading');
+  }
 }
 
 // ---------------------------------------------------------------------------
