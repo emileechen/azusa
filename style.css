@@ -514,7 +514,9 @@ img { display: block; }
 .card-action-btn.scryfall-btn      { text-decoration: none; }
 .card-action-btn.scryfall-btn:hover { background: var(--accent-dim); border-color: var(--accent); }
 .scryfall-icon { width: 16px; height: 16px; border-radius: 2px; }
-.card-action-btn.status-btn:hover { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
+.card-action-btn.tcg-btn:hover     { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
+.card-action-btn.tcg-btn.loading   { opacity: 0.5; pointer-events: none; }
+.card-action-btn.status-btn:hover  { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
 .card-action-btn.delete-btn:hover { background: var(--want-bg); border-color: var(--want); color: var(--want); }
 
 /* Foil shimmer */
@@ -741,8 +743,10 @@ img { display: block; }
   margin-right: 2px;
 }
 .table-action-btn:hover { color: var(--text); background: var(--surface-2); }
-.table-action-btn.scryfall-btn { text-decoration: none; }
-.table-action-btn.scryfall-btn:hover { color: var(--accent); }
+.table-action-btn.scryfall-btn       { text-decoration: none; }
+.table-action-btn.scryfall-btn:hover,
+.table-action-btn.tcg-btn:hover { color: var(--accent); }
+.table-action-btn.tcg-btn.loading { opacity: 0.5; pointer-events: none; }
 .table-action-btn.delete-btn:hover { color: var(--want); }
 
 /* ============================================================

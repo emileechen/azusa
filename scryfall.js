@@ -14,6 +14,9 @@ const Scryfall = (() => {
   // In-memory cache for set lookups (code → set object)
   const setCache = {};
 
+  // Cache for TCGplayer URLs (scryfall_id → url)
+  const tcgCache = {};
+
   // ---------------------------------------------------------------------------
   // Internal: throttled fetch — Scryfall asks for 50–100ms between requests
   // ---------------------------------------------------------------------------
@@ -208,6 +211,23 @@ const Scryfall = (() => {
   }
 
   // ---------------------------------------------------------------------------
+  // Fetch the TCGplayer URL for a card via its Scryfall id (cached).
+  // Returns the URL string or null if unavailable.
+  // ---------------------------------------------------------------------------
+  async function tcgplayerUrl(scryfallId) {
+    if (tcgCache[scryfallId] !== undefined) return tcgCache[scryfallId];
+    try {
+      const card = await throttledFetch(`${BASE}/cards/${scryfallId}`);
+      const url = card.purchase_uris?.tcgplayer ?? null;
+      tcgCache[scryfallId] = url;
+      return url;
+    } catch {
+      tcgCache[scryfallId] = null;
+      return null;
+    }
+  }
+
+  // ---------------------------------------------------------------------------
   // Public API
   // ---------------------------------------------------------------------------
   return {
@@ -221,6 +241,7 @@ const Scryfall = (() => {
     expandFinishes,
     imageUrl,
     isFoil,
+    tcgplayerUrl,
   };
 
 })();
