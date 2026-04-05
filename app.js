@@ -537,7 +537,7 @@ function makeCardTile(card) {
   const overlayHtml = State.readOnly ? '' : `
       <div class="card-overlay">
         <a class="card-action-btn scryfall-btn" href="https://scryfall.com/card/${card.set_code}/${card.collector_num}" target="_blank" rel="noopener" title="View on Scryfall"><img src="https://scryfall.com/icon.png" class="scryfall-icon" alt="Scryfall"/></a>
-        <button class="card-action-btn tcg-btn" title="View on TCGplayer" data-scryfall-id="${card.scryfall_id}">🛒</button>
+        <button class="card-action-btn tcg-btn" title="View on TCGplayer" data-scryfall-id="${card.scryfall_id}" data-finish="${card.finish}">🛒</button>
         <button class="card-action-btn status-btn" title="Switch to ${card.status === 'have' ? 'want' : 'have'}" data-id="${card.id}">🔀</button>
         <button class="card-action-btn delete-btn" title="Delete" data-id="${card.id}">❌</button>
       </div>`;
@@ -568,7 +568,7 @@ function makeCardTile(card) {
   // Events (skip write actions in read-only mode)
   tile.querySelector('.scryfall-btn').addEventListener('click', e => e.stopPropagation());
   tile.querySelector('.tcg-btn').addEventListener('click', e => {
-    e.stopPropagation(); openTcgplayer(card.scryfall_id, e.currentTarget);
+    e.stopPropagation(); openTcgplayer(card.scryfall_id, card.finish, e.currentTarget);
   });
   if (!State.readOnly) {
     tile.querySelector('.status-btn').addEventListener('click', e => {
@@ -647,14 +647,14 @@ function renderTable(cards) {
         </td>
         ${State.readOnly ? '' : `<td class="table-actions">
           <a class="table-action-btn scryfall-btn" href="https://scryfall.com/card/${card.set_code}/${card.collector_num}" target="_blank" rel="noopener" title="View on Scryfall"><img src="https://scryfall.com/icon.png" class="scryfall-icon" alt="Scryfall"/></a>
-          <button class="table-action-btn tcg-btn" title="View on TCGplayer" data-scryfall-id="${card.scryfall_id}">🛒</button>
+          <button class="table-action-btn tcg-btn" title="View on TCGplayer" data-scryfall-id="${card.scryfall_id}" data-finish="${card.finish}">🛒</button>
           <button class="table-action-btn status-btn" data-id="${card.id}" title="Switch to ${card.status === 'have' ? 'want' : 'have'}">🔀</button>
           <button class="table-action-btn delete-btn" data-id="${card.id}">❌</button>
         </td>`}`;
 
       if (!State.readOnly) {
         row.querySelector('.card-fav-btn').addEventListener('click', () => toggleCardFav(card.id));
-        row.querySelector('.tcg-btn').addEventListener('click', () => openTcgplayer(card.scryfall_id));
+        row.querySelector('.tcg-btn').addEventListener('click', () => openTcgplayer(card.scryfall_id, card.finish));
         row.querySelector('.status-btn').addEventListener('click', () => toggleCardStatus(card.id));
         row.querySelector('.delete-btn').addEventListener('click', () => confirmDelete(card.id));
       }
@@ -668,10 +668,10 @@ function renderTable(cards) {
 // ---------------------------------------------------------------------------
 // OPEN TCGPLAYER — fetch direct link from Scryfall and open in new tab
 // ---------------------------------------------------------------------------
-async function openTcgplayer(scryfallId, btn) {
+async function openTcgplayer(scryfallId, finish, btn) {
   if (btn) btn.classList.add('loading');
   try {
-    const url = await Scryfall.tcgplayerUrl(scryfallId);
+    const url = await Scryfall.tcgplayerUrl(scryfallId, finish);
     if (url) {
       window.open(url, '_blank', 'noopener');
     } else {

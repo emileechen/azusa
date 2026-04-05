@@ -214,12 +214,23 @@ const Scryfall = (() => {
   // Fetch the TCGplayer URL for a card via its Scryfall id (cached).
   // Returns the URL string or null if unavailable.
   // ---------------------------------------------------------------------------
-  async function tcgplayerUrl(scryfallId) {
-    if (tcgCache[scryfallId] !== undefined) return tcgCache[scryfallId];
+  async function tcgplayerUrl(scryfallId, finish) {
+    const cacheKey = `${scryfallId}__${finish || ''}`;
+    if (tcgCache[cacheKey] !== undefined) return tcgCache[cacheKey];
     try {
       const card = await throttledFetch(`${BASE}/cards/${scryfallId}`);
-      const url = card.purchase_uris?.tcgplayer ?? null;
-      tcgCache[scryfallId] = url;
+      const base = card.purchase_uris?.tcgplayer ?? null;
+      if (!base) { tcgCache[cacheKey] = null; return null; }
+      const printing = (finish || deriveFinish(card)) === 'nonfoil' ? 'Normal' : 'Foil';
+      const filters = `&Condition=Near+Mint&Printing=${printing}`;
+      // Scryfall wraps TCGplayer URLs in an affiliate redirect with the real URL
+      // encoded in the `u=` param. Append filters to the inner URL.
+      const url = base.replace(/(u=)([^&]+)/, (_, prefix, encoded) => {
+        const inner = decodeURIComponent(encoded);
+        const sep = inner.includes('?') ? '&' : '?';
+        return prefix + encodeURIComponent(inner + sep + filters.slice(1));
+      });
+      tcgCache[cacheKey] = url;
       return url;
     } catch {
       tcgCache[scryfallId] = null;
