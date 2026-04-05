@@ -83,7 +83,7 @@ function sldDropName(collectorNumber) {
 /**
  * Group an array of SLD cards by their drop name.
  * Cards not matching any known drop go under "Secret Lair Drop (Unknown)".
- * Returns array of { name, cards } sorted by first collector number.
+ * Returns array of { name, cards } sorted by collector number descending (newest first).
  */
 function groupSldByDrop(cards) {
   const groups = {};
@@ -98,6 +98,6 @@ function groupSldByDrop(cards) {
     .sort((a, b) => {
       const aNum = parseInt(a.cards[0].collector_number, 10) || 0;
       const bNum = parseInt(b.cards[0].collector_number, 10) || 0;
-      return aNum - bNum;
+      return bNum - aNum;
     });
 }
