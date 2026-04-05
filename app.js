@@ -30,6 +30,7 @@ const State = {
   tokenClient:  null,
   accessToken:  null,
   parentNames:  {},  // parent_set_code → display name
+  releaseDates: {}, // set_code → released_at string (YYYY-MM-DD)
   readOnly:     false,
 };
 
@@ -201,7 +202,10 @@ async function resolveParentNames() {
   await Promise.all(codes.map(async code => {
     if (State.parentNames[code]) return;
     const s = await Scryfall.fetchSet(code);
-    if (s) State.parentNames[code] = s.name;
+    if (s) {
+      State.parentNames[code] = s.name;
+      if (s.released_at) State.releaseDates[code] = s.released_at;
+    }
   }));
 }
 
@@ -289,7 +293,16 @@ function groupCards(cards) {
   }
 
   // Sort releases: those with cards first, by name
-  releases.sort((a, b) => a.name.localeCompare(b.name));
+  releases.sort((a, b) => {
+    const aFav = a.cards.some(c => c.favourite);
+    const bFav = b.cards.some(c => c.favourite);
+    if (aFav !== bFav) return bFav - aFav;
+    // Sort by release date descending (newest first), fall back to name
+    const aDate = State.releaseDates[a.key] ?? State.releaseDates[a.cards[0]?.set_code] ?? '';
+    const bDate = State.releaseDates[b.key] ?? State.releaseDates[b.cards[0]?.set_code] ?? '';
+    if (aDate || bDate) return bDate.localeCompare(aDate);
+    return a.name.localeCompare(b.name);
+  });
   return releases;
 }
 
