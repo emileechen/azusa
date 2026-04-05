@@ -3,23 +3,21 @@
  * Secret Lair drop name registry.
  * Maps collector number ranges to drop names for SLD basic lands.
  *
- * ── How to regenerate ──
+ * ── How to add new drops ──
+ *
+ * Existing entries are stable — only new drops need to be added.
  *
  * 1. Fetch all SLD basic land collector numbers from the Scryfall API:
- *    https://api.scryfall.com/cards/search?q=set:sld unique:prints (type:land type:basic)&order=collector_number
+ *    https://api.scryfall.com/cards/search?q=set:sld+(type:land+type:basic)&unique=prints&order=collector_number
  *    Paginate all pages. Strip ★ suffixes from collector numbers to get unique ints.
  *
- * 2. Fetch the Scryfall SLD set page HTML: https://scryfall.com/sets/sld
- *    (requires a browser-like User-Agent header).
- *    Split on <h3 class="card-grid-header"> to get sections. Each section has:
- *      - Drop name in the header text (strip HTML tags + "• N cards" suffix)
- *      - Card links as /card/sld/{collector_number}
+ * 2. Filter out any numbers already covered by existing SLD_DROPS ranges.
+ *    The remaining numbers are from new drops.
  *
- * 3. Cross-reference: for each section, intersect its collector numbers with
- *    the set from step 1. Split non-contiguous matches into separate entries
- *    (e.g. Artist Series: Seb McKinnon has cards at #119 and #539).
+ * 3. Look up each uncovered number on Scryfall (https://scryfall.com/card/sld/{num})
+ *    to find which drop it belongs to. Group contiguous numbers into ranges.
  *
- * 4. Format as { name, start, end } entries sorted by start number.
+ * 4. Append new { name, start, end } entries sorted by start number.
  *    Use \u00AE for ® and \u00E2 for â to keep the file ASCII-safe.
  */
 
