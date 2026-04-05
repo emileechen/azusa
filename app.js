@@ -524,8 +524,8 @@ function makeCardTile(card) {
   const overlayHtml = State.readOnly ? '' : `
       <div class="card-overlay">
         <a class="card-action-btn scryfall-btn" href="https://scryfall.com/card/${card.set_code}/${card.collector_num}" target="_blank" rel="noopener" title="View on Scryfall"><img src="https://scryfall.com/icon.png" class="scryfall-icon" alt="Scryfall"/></a>
-        <button class="card-action-btn tcg-btn" title="View on TCGplayer" data-scryfall-id="${card.scryfall_id}">$</button>
-        <button class="card-action-btn status-btn" title="Switch to ${card.status === 'have' ? 'want' : 'have'}" data-id="${card.id}">${card.status === 'have' ? '🛒' : '📥'}</button>
+        <button class="card-action-btn tcg-btn" title="View on TCGplayer" data-scryfall-id="${card.scryfall_id}">🛒</button>
+        <button class="card-action-btn status-btn" title="Switch to ${card.status === 'have' ? 'want' : 'have'}" data-id="${card.id}">🔀</button>
         <button class="card-action-btn delete-btn" title="Delete" data-id="${card.id}">❌</button>
       </div>`;
 
@@ -634,8 +634,8 @@ function renderTable(cards) {
         </td>
         ${State.readOnly ? '' : `<td class="table-actions">
           <a class="table-action-btn scryfall-btn" href="https://scryfall.com/card/${card.set_code}/${card.collector_num}" target="_blank" rel="noopener" title="View on Scryfall"><img src="https://scryfall.com/icon.png" class="scryfall-icon" alt="Scryfall"/></a>
-          <button class="table-action-btn tcg-btn" title="View on TCGplayer" data-scryfall-id="${card.scryfall_id}">$</button>
-          <button class="table-action-btn status-btn" data-id="${card.id}" title="Switch to ${card.status === 'have' ? 'want' : 'have'}">${card.status === 'have' ? '🛒' : '📥'}</button>
+          <button class="table-action-btn tcg-btn" title="View on TCGplayer" data-scryfall-id="${card.scryfall_id}">🛒</button>
+          <button class="table-action-btn status-btn" data-id="${card.id}" title="Switch to ${card.status === 'have' ? 'want' : 'have'}">🔀</button>
           <button class="table-action-btn delete-btn" data-id="${card.id}">❌</button>
         </td>`}`;
 
