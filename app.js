@@ -566,11 +566,11 @@ function makeCardTile(card) {
     </button>`;
 
   // Events (skip write actions in read-only mode)
-  tile.querySelector('.scryfall-btn').addEventListener('click', e => e.stopPropagation());
-  tile.querySelector('.tcg-btn').addEventListener('click', e => {
-    e.stopPropagation(); openTcgplayer(card.scryfall_id, card.finish, e.currentTarget);
-  });
   if (!State.readOnly) {
+    tile.querySelector('.scryfall-btn').addEventListener('click', e => e.stopPropagation());
+    tile.querySelector('.tcg-btn').addEventListener('click', e => {
+      e.stopPropagation(); openTcgplayer(card.scryfall_id, card.finish, e.currentTarget);
+    });
     tile.querySelector('.status-btn').addEventListener('click', e => {
       e.stopPropagation(); toggleCardStatus(card.id);
     });
