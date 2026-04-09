@@ -389,6 +389,16 @@ img { display: block; }
   margin-bottom: 12px;
   padding-bottom: 8px;
   border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.set-icon {
+  width: 1em;
+  height: 1em;
+  vertical-align: middle;
+  filter: brightness(0) invert(0.6);
 }
 .cycle-prices {
   display: inline-flex;

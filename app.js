@@ -31,6 +31,7 @@ const State = {
   accessToken:  null,
   parentNames:  {},  // parent_set_code → display name
   releaseDates: {}, // set_code → released_at string (YYYY-MM-DD)
+  setIcons:     {}, // set_code → icon_svg_uri from Scryfall
   readOnly:     false,
 };
 
@@ -99,6 +100,12 @@ function zipCycleRows(cards, typeFn) {
     if (row.length >= 2) rows.push(row);
   }
   return rows;
+}
+
+function setIcon(releaseKey) {
+  const url = State.setIcons[releaseKey];
+  if (!url) return '';
+  return `<img class="set-icon" src="${url}" alt="" />`;
 }
 
 function finishAbbrev(finish) {
@@ -205,6 +212,7 @@ async function resolveParentNames() {
     if (s) {
       State.parentNames[code] = s.name;
       if (s.released_at) State.releaseDates[code] = s.released_at;
+      if (s.icon_svg_uri) State.setIcons[code] = s.icon_svg_uri;
     }
   }));
 }
@@ -457,7 +465,7 @@ function renderGrid(cards) {
 
   for (const release of releases) {
     const releaseEl = el('div', 'release-group');
-    releaseEl.innerHTML = `<h2 class="release-name">${release.name}</h2>`;
+    releaseEl.innerHTML = `<h2 class="release-name">${setIcon(release.key)}${release.name}</h2>`;
 
     const { cycles, solos } = release.cycles;
 
@@ -621,7 +629,7 @@ function renderTable(cards) {
   for (const release of releases) {
     // Release header row
     const releaseRow = el('tr', 'table-release-row');
-    releaseRow.innerHTML = `<td colspan="${State.readOnly ? 8 : 9}">${release.name}</td>`;
+    releaseRow.innerHTML = `<td colspan="${State.readOnly ? 8 : 9}">${setIcon(release.key)}${release.name}</td>`;
     tbody.appendChild(releaseRow);
 
     // Card rows
